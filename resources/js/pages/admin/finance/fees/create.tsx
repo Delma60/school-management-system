@@ -5,13 +5,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
-import { Classroom } from '@/types';
+import { Classroom, Student } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Banknote, CalendarDays, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Banknote, CalendarDays, Loader2, Save, Users } from 'lucide-react';
 import React from 'react';
 import { toast } from 'sonner';
 
-export default function CreateFeeStructure({ classrooms }: { classrooms: Classroom[] }) {
+// Make sure to add Student to your @/types if you have it defined,
+// otherwise use any for now.
+export default function CreateFeeStructure({ classrooms, students = [] }: { classrooms: Classroom[], students?: Student[] }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         amount: '',
@@ -19,7 +21,9 @@ export default function CreateFeeStructure({ classrooms }: { classrooms: Classro
         term: 'First Term',
         status: 'active',
         description: '',
+        assignment_type: 'class', // 'class' or 'student'
         classroom_id: '',
+        student_id: '',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -85,23 +89,6 @@ export default function CreateFeeStructure({ classrooms }: { classrooms: Classro
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label>Assign Classroom</Label>
-                                    <Select value={data.classroom_id} onValueChange={(val) => setData('classroom_id', val)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a class" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {classrooms.map((cls: any) => (
-                                                <SelectItem key={cls.id} value={cls.id.toString()}>
-                                                    {cls.name} ({cls.grade_level})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.classroom_id && <p className="text-destructive text-xs">{errors.classroom_id}</p>}
-                                </div>
-
-                                <div className="space-y-2">
                                     <Label htmlFor="description">Description (Optional)</Label>
                                     <Textarea
                                         id="description"
@@ -113,44 +100,118 @@ export default function CreateFeeStructure({ classrooms }: { classrooms: Classro
                             </CardContent>
                         </Card>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-lg">
-                                    <CalendarDays className="h-5 w-5 text-emerald-500" />
-                                    Academic Scheduling
-                                </CardTitle>
-                                <CardDescription>Determine when this fee is applicable.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label>Academic Session</Label>
-                                    <Select value={data.academic_session} onValueChange={(v) => setData('academic_session', v)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select session" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="2024/2025">2024/2025</SelectItem>
-                                            <SelectItem value="2025/2026">2025/2026</SelectItem>
-                                            <SelectItem value="2026/2027">2026/2027</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                        <div className="space-y-5">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        <Users className="h-5 w-5 text-blue-500" />
+                                        Assignment target
+                                    </CardTitle>
+                                    <CardDescription>Choose who this fee applies to.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>Assign To</Label>
+                                        <Select
+                                            value={data.assignment_type}
+                                            onValueChange={(val) => {
+                                                setData(prev => ({
+                                                    ...prev,
+                                                    assignment_type: val,
+                                                    // Clear the other ID when switching types
+                                                    classroom_id: val === 'student' ? '' : prev.classroom_id,
+                                                    student_id: val === 'class' ? '' : prev.student_id,
+                                                }));
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select target type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="class">Entire Classroom</SelectItem>
+                                                <SelectItem value="student">Specific Student</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
-                                <div className="space-y-2">
-                                    <Label>Term</Label>
-                                    <Select value={data.term} onValueChange={(v) => setData('term', v)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select term" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="First Term">First Term</SelectItem>
-                                            <SelectItem value="Second Term">Second Term</SelectItem>
-                                            <SelectItem value="Third Term">Third Term</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                    {data.assignment_type === 'class' && (
+                                        <div className="space-y-2">
+                                            <Label>Select Classroom</Label>
+                                            <Select value={data.classroom_id} onValueChange={(val) => setData('classroom_id', val)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a class" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {classrooms?.map((cls) => (
+                                                        <SelectItem key={cls.id} value={cls.id.toString()}>
+                                                            {cls.name} ({cls.grade_level})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            {errors.classroom_id && <p className="text-destructive text-xs">{errors.classroom_id}</p>}
+                                        </div>
+                                    )}
+
+                                    {data.assignment_type === 'student' && (
+                                        <div className="space-y-2">
+                                            <Label>Select Student</Label>
+                                            <Select value={data.student_id} onValueChange={(val) => setData('student_id', val)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a student" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {students?.map((student) => (
+                                                        <SelectItem key={student.id} value={student.id.toString()}>
+                                                            {student.name}  ({student?.meta?.admission_number})
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            {errors.student_id && <p className="text-destructive text-xs">{errors.student_id}</p>}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        <CalendarDays className="h-5 w-5 text-emerald-500" />
+                                        Academic Scheduling
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label>Academic Session</Label>
+                                        <Select value={data.academic_session} onValueChange={(v) => setData('academic_session', v)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select session" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="2024/2025">2024/2025</SelectItem>
+                                                <SelectItem value="2025/2026">2025/2026</SelectItem>
+                                                <SelectItem value="2026/2027">2026/2027</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Term</Label>
+                                        <Select value={data.term} onValueChange={(v) => setData('term', v)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select term" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="First Term">First Term</SelectItem>
+                                                <SelectItem value="Second Term">Second Term</SelectItem>
+                                                <SelectItem value="Third Term">Third Term</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-end gap-3 border-t pt-6">

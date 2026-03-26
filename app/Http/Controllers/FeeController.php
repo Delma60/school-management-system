@@ -6,6 +6,7 @@ use App\Models\ClassFee;
 use App\Models\Classroom;
 use App\Models\FeeType;
 use App\Models\Payment;
+use App\Models\Student;
 use App\Models\StudentFee;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -99,13 +100,13 @@ class FeeController extends Controller
         $this->authorize('create', FeeType::class);
 
         //
-        $classrooms = Classroom::all(['id', 'name']);
+        $classrooms = Classroom::all();
+        // Assuming you have a Student model, and eager loading the user if names are stored there
+        $students = Student::all();
 
-        // Fetch active fee types
-        $feeTypes = FeeType::where('status', 'active')->get(['id', 'name', 'amount']);
         return inertia('admin/finance/fees/create', [
             'classrooms' => $classrooms,
-            'feeTypes' => $feeTypes,
+            'students' => $students,
         ]);
     }
 
