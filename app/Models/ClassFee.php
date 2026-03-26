@@ -9,7 +9,7 @@ class ClassFee extends Model
     //
     protected $fillable = ['classroom_id', 'fee_type_id', 'amount_due', 'amount_paid', 'status'];
 
-    public function student()
+    public function classroom()
     {
         return $this->belongsTo(Classroom::class, 'classroom_id');
     }

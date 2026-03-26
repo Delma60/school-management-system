@@ -175,7 +175,7 @@ export default function FeeManagement({ stats, feeStructures, recentPayments, cu
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button variant="ghost" size="icon">
+                                                    <Button variant="ghost" size="icon" onClick={() => router.get(route("fees.show", fee.id))}>
                                                         <ArrowUpRight className="h-4 w-4" />
                                                     </Button>
                                                 </TableCell>

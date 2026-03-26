@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
@@ -11,8 +13,6 @@ import { ArrowLeft, Banknote, CalendarDays, Loader2, Save, Users } from 'lucide-
 import React from 'react';
 import { toast } from 'sonner';
 
-// Make sure to add Student to your @/types if you have it defined,
-// otherwise use any for now.
 export default function CreateFeeStructure({ classrooms, students = [] }: { classrooms: Classroom[], students?: Student[] }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
@@ -22,8 +22,8 @@ export default function CreateFeeStructure({ classrooms, students = [] }: { clas
         status: 'active',
         description: '',
         assignment_type: 'class', // 'class' or 'student'
-        classroom_id: '',
-        student_id: '',
+        classroom_ids: [] as string[], // Now an array for multiple classes
+        student_ids: [] as string[],   // Now an array for multiple students
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -31,6 +31,36 @@ export default function CreateFeeStructure({ classrooms, students = [] }: { clas
         post(route('fees.store'), {
             onSuccess: () => toast.success('Fee structure defined successfully.'),
         });
+    };
+
+    const toggleClassroom = (id: string) => {
+        setData('classroom_ids', data.classroom_ids.includes(id)
+            ? data.classroom_ids.filter((cId) => cId !== id)
+            : [...data.classroom_ids, id]
+        );
+    };
+
+    const toggleStudent = (id: string) => {
+        setData('student_ids', data.student_ids.includes(id)
+            ? data.student_ids.filter((sId) => sId !== id)
+            : [...data.student_ids, id]
+        );
+    };
+
+    const handleSelectAllClasses = () => {
+        if (data.classroom_ids.length === classrooms.length) {
+            setData('classroom_ids', []); // Deselect all
+        } else {
+            setData('classroom_ids', classrooms.map(c => c.id.toString())); // Select all
+        }
+    };
+
+    const handleSelectAllStudents = () => {
+        if (data.student_ids.length === students.length) {
+            setData('student_ids', []); // Deselect all
+        } else {
+            setData('student_ids', students.map(s => s.id.toString())); // Select all
+        }
     };
 
     return (
@@ -105,7 +135,7 @@ export default function CreateFeeStructure({ classrooms, students = [] }: { clas
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2 text-lg">
                                         <Users className="h-5 w-5 text-blue-500" />
-                                        Assignment target
+                                        Assignment Target
                                     </CardTitle>
                                     <CardDescription>Choose who this fee applies to.</CardDescription>
                                 </CardHeader>
@@ -118,9 +148,9 @@ export default function CreateFeeStructure({ classrooms, students = [] }: { clas
                                                 setData(prev => ({
                                                     ...prev,
                                                     assignment_type: val,
-                                                    // Clear the other ID when switching types
-                                                    classroom_id: val === 'student' ? '' : prev.classroom_id,
-                                                    student_id: val === 'class' ? '' : prev.student_id,
+                                                    // Clear the selections when switching contexts
+                                                    classroom_ids: val === 'student' ? [] : prev.classroom_ids,
+                                                    student_ids: val === 'class' ? [] : prev.student_ids,
                                                 }));
                                             }}
                                         >
@@ -128,47 +158,83 @@ export default function CreateFeeStructure({ classrooms, students = [] }: { clas
                                                 <SelectValue placeholder="Select target type" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="class">Entire Classroom</SelectItem>
-                                                <SelectItem value="student">Specific Student</SelectItem>
+                                                <SelectItem value="class">Classrooms</SelectItem>
+                                                <SelectItem value="student">Specific Students</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
 
+                                    {/* MULTIPLE CLASSROOM SELECTION */}
                                     {data.assignment_type === 'class' && (
-                                        <div className="space-y-2">
-                                            <Label>Select Classroom</Label>
-                                            <Select value={data.classroom_id} onValueChange={(val) => setData('classroom_id', val)}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a class" />
-                                                </SelectTrigger>
-                                                <SelectContent>
+                                        <div className="space-y-3 rounded-md border p-4">
+                                            <div className="flex items-center justify-between">
+                                                <Label>Select Classrooms</Label>
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={handleSelectAllClasses}
+                                                >
+                                                    {data.classroom_ids.length === classrooms?.length ? 'Deselect All' : 'Select All'}
+                                                </Button>
+                                            </div>
+                                            <ScrollArea className="h-48 rounded-md border p-4">
+                                                <div className="space-y-4">
                                                     {classrooms?.map((cls) => (
-                                                        <SelectItem key={cls.id} value={cls.id.toString()}>
-                                                            {cls.name} ({cls.grade_level})
-                                                        </SelectItem>
+                                                        <div key={cls.id} className="flex items-center space-x-2">
+                                                            <Checkbox
+                                                                id={`class-${cls.id}`}
+                                                                checked={data.classroom_ids.includes(cls.id.toString())}
+                                                                onCheckedChange={() => toggleClassroom(cls.id.toString())}
+                                                            />
+                                                            <label
+                                                                htmlFor={`class-${cls.id}`}
+                                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                            >
+                                                                {cls.name} ({cls.grade_level})
+                                                            </label>
+                                                        </div>
                                                     ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {errors.classroom_id && <p className="text-destructive text-xs">{errors.classroom_id}</p>}
+                                                </div>
+                                            </ScrollArea>
+                                            {errors.classroom_ids && <p className="text-destructive text-xs">{errors.classroom_ids}</p>}
                                         </div>
                                     )}
 
+                                    {/* MULTIPLE STUDENT SELECTION */}
                                     {data.assignment_type === 'student' && (
-                                        <div className="space-y-2">
-                                            <Label>Select Student</Label>
-                                            <Select value={data.student_id} onValueChange={(val) => setData('student_id', val)}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a student" />
-                                                </SelectTrigger>
-                                                <SelectContent>
+                                        <div className="space-y-3 rounded-md border p-4">
+                                            <div className="flex items-center justify-between">
+                                                <Label>Select Students</Label>
+                                                <Button
+                                                    type="button"
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={handleSelectAllStudents}
+                                                >
+                                                    {data.student_ids.length === students?.length ? 'Deselect All' : 'Select All'}
+                                                </Button>
+                                            </div>
+                                            <ScrollArea className="h-48 rounded-md border p-4">
+                                                <div className="space-y-4">
                                                     {students?.map((student) => (
-                                                        <SelectItem key={student.id} value={student.id.toString()}>
-                                                            {student.name}  ({student?.meta?.admission_number})
-                                                        </SelectItem>
+                                                        <div key={student.id} className="flex items-center space-x-2">
+                                                            <Checkbox
+                                                                id={`student-${student.id}`}
+                                                                checked={data.student_ids.includes(student.id.toString())}
+                                                                onCheckedChange={() => toggleStudent(student.id.toString())}
+                                                            />
+                                                            <label
+                                                                htmlFor={`student-${student.id}`}
+                                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                                            >
+                                                                {student.name}  ({student?.meta?.admission_number as string || "No Admission Number" })
+                                                            </label>
+                                                        </div>
                                                     ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {errors.student_id && <p className="text-destructive text-xs">{errors.student_id}</p>}
+                                                </div>
+                                            </ScrollArea>
+                                            {errors.student_ids && <p className="text-destructive text-xs">{errors.student_ids}</p>}
                                         </div>
                                     )}
                                 </CardContent>

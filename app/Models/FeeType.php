@@ -13,7 +13,7 @@ class FeeType extends Model
         return $this->hasMany(StudentFee::class);
     }
 
-    public function classroomFee()
+    public function classroomFees()
     {
         return $this->hasMany(ClassFee::class);
     }

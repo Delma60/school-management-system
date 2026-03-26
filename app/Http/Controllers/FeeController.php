@@ -10,7 +10,9 @@ use App\Models\Student;
 use App\Models\StudentFee;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class FeeController extends Controller
@@ -113,36 +115,94 @@ class FeeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+   /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
         $this->authorize('create', FeeType::class);
 
+        // 1. Update validation to include the arrays from the React frontend
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0',
-            'academic_session' => 'required|string', // e.g., 2025/2026
+            'academic_session' => 'required|string',
             'term' => 'required|in:First Term,Second Term,Third Term',
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string',
+            'assignment_type' => 'required|in:class,student',
+            'classroom_ids' => 'required_if:assignment_type,class|array',
+            'classroom_ids.*' => 'exists:classrooms,id',
+            'student_ids' => 'required_if:assignment_type,student|array',
+            'student_ids.*' => 'exists:users,id', // Validating against the users table
         ]);
 
-        FeeType::create([
-            'name' => $validated['name'],
-            'amount' => $validated['amount'],
-            'academic_session' => $validated['academic_session'],
-            'term' => $validated['term'],
-            'status' => $validated['status'],
-            'meta' => [
-                'description' => $validated['description'],
-                'created_by' => auth()->id(),
-            ],
-        ]);
+        // 2. Use a Database Transaction to ensure all data saves together safely
+        DB::transaction(function () use ($validated) {
+
+            // Create the main FeeType record
+            $fee = FeeType::create([
+                'name' => $validated['name'],
+                'amount' => $validated['amount'],
+                'academic_session' => $validated['academic_session'],
+                'term' => $validated['term'],
+                'status' => $validated['status'],
+                'meta' => [
+                    'description' => $validated['description'],
+                    'created_by' => Auth::id(),
+                ],
+            ]);
+            Log::info($fee);
+
+            // Handle Specific Student Assignment
+            if ($validated['assignment_type'] === 'student' && !empty($validated['student_ids'])) {
+                foreach ($validated['student_ids'] as $studentId) {
+                    StudentFee::create([
+                        'user_id' => $studentId,
+                        'fee_type_id' => $fee->id,
+                        'amount_due' => $fee->amount,
+                        'amount_paid' => 0,
+                    ]);
+                }
+            }
+            // Handle Entire Classroom Assignment
+            elseif ($validated['assignment_type'] === 'class' && !empty($validated['classroom_ids'])) {
+                $studentIds = Student::whereIn('classroom_id', $validated['classroom_ids'])
+                    ->pluck('id');
+
+                // First, record that this fee applies to these classrooms
+                foreach ($validated['classroom_ids'] as $classroomId) {
+                    ClassFee::create([
+                        'classroom_id' => $classroomId,
+                        'fee_type_id' => $fee->id,
+                        'amount_due' => $fee->amount * count($studentIds),
+                        'amount_paid' => 0,
+                    ]);
+                }
+
+                // Next, fetch all student IDs belonging to these selected classrooms
+
+
+                // Finally, generate the actual bill (StudentFee) for each student in those classes
+                foreach ($studentIds as $studentId) {
+                    StudentFee::create([
+                        'user_id' => $studentId,
+                        'fee_type_id' => $fee->id,
+                        'amount_due' => $fee->amount,
+                        'amount_paid' => 0,
+                    ]);
+                }
+            }
+        });
 
         return redirect()
             ->route('fees.index')
-            ->with('success', 'New fee structure created successfully.');
+            ->with('success', 'New fee structure created and assigned successfully.');
     }
 
+    /**
+     * Display the specified resource.
+     */
     /**
      * Display the specified resource.
      */
@@ -150,8 +210,23 @@ class FeeController extends Controller
     {
         $this->authorize('view', $fee);
 
+        // Load relationships (Ensure these are defined in your FeeType model)
+        $fee->load(['classroomFees.classroom', 'studentFees.student']);
+
+        // Calculate specific stats for this fee
+        $expected = $fee->studentFees()->sum('amount_due');
+        $collected = $fee->studentFees()->sum('amount_paid');
+        $outstanding = $expected - $collected;
+        $collectionRate = $expected > 0 ? round(($collected / $expected) * 100, 1) : 0;
+
         return inertia('admin/finance/fees/show', [
             'fee' => $fee,
+            'stats' => [
+                'expected' => (float) $expected,
+                'collected' => (float) $collected,
+                'outstanding' => (float) $outstanding,
+                'collection_rate' => $collectionRate,
+            ],
         ]);
     }
 
