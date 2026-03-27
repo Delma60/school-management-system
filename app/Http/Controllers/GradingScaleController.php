@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\GradingScale;
+use App\Services\ViewResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,7 +17,7 @@ class GradingScaleController extends Controller
 
           $authType = Auth::user()->role->name ?? "admin";
           $scales = GradingScale::all();
-        return inertia("$authType/grading_scale/index", compact("scales"));
+        return inertia(ViewResolver::resolve("grading_scale/index", "admin"), compact("scales"));
     }
 
     /**

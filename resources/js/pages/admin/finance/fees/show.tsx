@@ -7,7 +7,8 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
-import { Head, Link } from '@inertiajs/react';
+import { formatCurrency } from '@/lib/utils';
+import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, CircleDashed, Clock, CreditCard, GraduationCap, Mail, MoreHorizontal, Search, Users } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -15,10 +16,6 @@ export default function ShowFeeStructure({ fee, stats }: { fee: any, stats: any 
     const [searchTerm, setSearchTerm] = useState('');
 
     // Format currency to Nigerian Naira
-    const formatCurrency = (amount: number | string) => {
-        const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-        return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(num || 0);
-    };
 
     // Safely get student name (handling both 'name' or 'first_name last_name' conventions)
     const getStudentName = (student: any) => {
@@ -202,7 +199,7 @@ export default function ShowFeeStructure({ fee, stats }: { fee: any, stats: any 
                                                                     </DropdownMenuTrigger>
                                                                     <DropdownMenuContent align="end">
                                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                                        <DropdownMenuItem onClick={() => alert('Future feature: Open payment modal')}>
+                                                                        <DropdownMenuItem onClick={() => router.get(route("payments.create", { student_id: sf.user_id, amount: sf.amount_due, fee_type_id: fee.id }))}>
                                                                             <CreditCard className="mr-2 h-4 w-4" />
                                                                             Record Payment
                                                                         </DropdownMenuItem>
@@ -213,7 +210,7 @@ export default function ShowFeeStructure({ fee, stats }: { fee: any, stats: any 
                                                                             </DropdownMenuItem>
                                                                         )}
                                                                         <DropdownMenuSeparator />
-                                                                        <DropdownMenuItem>View Profile</DropdownMenuItem>
+                                                                        <DropdownMenuItem onClick={() => router.get(route("students.show", sf.user_id ))}>View Profile</DropdownMenuItem>
                                                                     </DropdownMenuContent>
                                                                 </DropdownMenu>
                                                             </TableCell>

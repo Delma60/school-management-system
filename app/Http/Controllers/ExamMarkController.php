@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\Examination;
 use App\Models\Classroom;
 use App\Models\GradingScale;
+use App\Services\ViewResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -19,7 +20,7 @@ class ExamMarkController extends Controller
      */
     public function index(Request $request)
     {
-        $authType = Auth::user()->role->name ?? "admin";
+        // $authType = Auth::user()->role->name ?? "admin";
 
         // If exam_subject_id is provided, load the marks entry view
         if ($request->has('exam_subject_id')) {
@@ -32,7 +33,7 @@ class ExamMarkController extends Controller
         $gradingScales = GradingScale::orderBy('min_score')->get();
         $selectedExamId = $request->input('exam_id');
 
-        return inertia("$authType/exam_mark/index", [
+        return inertia(ViewResolver::resolve("exam_mark/index", "admin"), [
             'exams' => $exams,
             'classrooms' => $classrooms,
             'selectedExamId' => $selectedExamId,
@@ -47,7 +48,7 @@ class ExamMarkController extends Controller
      */
     private function loadMarksEntry(Request $request)
     {
-        $authType = Auth::user()->role->name ?? "admin";
+        // $authType = Auth::user()->role->name ?? "admin";
         $examSubjectId = $request->input('exam_subject_id');
         $classroomId = $request->input('classroom_id');
 
@@ -63,7 +64,7 @@ class ExamMarkController extends Controller
 
         $gradingScales = GradingScale::orderBy('min_score')->get();
 
-        return inertia("$authType/exam_mark/index", [
+        return inertia(ViewResolver::resolve("exam_mark/index", "admin"),[
             'exams' => Examination::with('subjects')->get(),
             'classrooms' => Classroom::all(),
             'selectedExamSubject' => $examSubject,
@@ -206,13 +207,13 @@ class ExamMarkController extends Controller
 
         foreach ($studentMarks as $index => $studentMark) {
             $currentMarks = $studentMark['marks_obtained'];
-            
+
             // If this is the first student or marks changed from previous, assign new rank
             if ($previousMarks !== null && $currentMarks !== $previousMarks) {
                 // Set rank to current position (skipping tied positions)
                 $currentRank = $index + 1;
             }
-            
+
             $ranks[$studentMark['student_id']] = $currentRank;
             $previousMarks = $currentMarks;
         }

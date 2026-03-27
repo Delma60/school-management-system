@@ -69,7 +69,7 @@ class FeeController extends Controller
             });
 
         // 3. Fetch Recent Transactions
-        $recentPayments = Payment::with('student.meta')
+        $recentPayments = Payment::with('student')
             ->orderBy('payment_date', 'desc')
             ->take(10)
             ->get()

@@ -7,6 +7,7 @@ use App\Http\Controllers\ExaminationController;
 use App\Http\Controllers\ExamMarkController;
 use App\Http\Controllers\FeeController;
 use App\Http\Controllers\GradingScaleController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PerformanceLogController;
 use App\Http\Controllers\RolesController;
@@ -80,6 +81,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::prefix('finance')->group(function () {
         Route::resource('fees', FeeController::class);
+        Route::resource('payments', PaymentController::class);
         // Future routes to build out:
         // Route::post('/fees/payment', [FeeController::class, 'storePayment'])->name('fees.payment.store');
         // Route::post('/fees/structure', [FeeController::class, 'storeStructure'])->name('fees.structure.store');

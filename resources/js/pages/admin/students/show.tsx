@@ -6,11 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
+import { formatCurrency } from '@/lib/utils';
 import { Classroom, Student } from '@/types';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Calendar, Clock, Mail, Phone, Printer, TrendingUp, UserCog } from 'lucide-react';
+import { ArrowLeft, Banknote, Calendar, Clock, CreditCard, Mail, Phone, Printer, Receipt, TrendingUp, UserCog } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -163,11 +165,208 @@ export default function StudentShow({ student, attendanceStats, academicData, cl
                             <TabsContent value="academic">
                                 <AcademicsTab academicData={academicData} />
                             </TabsContent>
+
                             <TabsContent value="attendance">
                                 <AttendanceTab
                                     attendanceStats={Object.fromEntries(Object.entries(attendanceStats).map(([k, v]) => [k, String(v)]))}
                                     attendanceData={student?.attendances || []}
                                 />
+                            </TabsContent>
+
+                            <TabsContent value="fees" className="space-y-6">
+                                {/* Summary Cards */}
+                                <div className="grid gap-4 md:grid-cols-3">
+                                    <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <CardTitle className="text-sm font-medium">Total Billed</CardTitle>
+                                            <Receipt className="text-muted-foreground h-4 w-4" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">
+                                                {formatCurrency(
+                                                    student.fees?.reduce((sum: number, fee) => sum + parseFloat(fee.amount_due.toString()), 0) || 0,
+                                                )}
+                                            </div>
+                                            <p className="text-muted-foreground mt-1 text-xs">Across all active fees</p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
+                                            <Banknote className="h-4 w-4 text-emerald-500" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold text-emerald-600">
+                                                {formatCurrency(
+                                                    student.fees?.reduce((sum: number, fee) => sum + parseFloat(fee.amount_paid.toString()), 0) || 0,
+                                                )}
+                                            </div>
+                                            <p className="text-muted-foreground mt-1 text-xs">Total lifetime contributions</p>
+                                        </CardContent>
+                                    </Card>
+                                    <Card>
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <CardTitle className="text-sm font-medium">Outstanding Balance</CardTitle>
+                                            <CreditCard className="h-4 w-4 text-amber-500" />
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold text-amber-600">
+                                                {formatCurrency(
+                                                    (student.fees?.reduce((sum: number, fee) => sum + parseFloat(fee.amount_due.toString()), 0) ||
+                                                        0) -
+                                                        (student.fees?.reduce(
+                                                            (sum: number, fee) => sum + parseFloat(fee.amount_paid.toString()),
+                                                            0,
+                                                        ) || 0),
+                                                )}
+                                            </div>
+                                            <p className="text-muted-foreground mt-1 text-xs">Requires attention</p>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                {/* <div className="flex justify-end">
+                                    <Button asChild className="gap-2">
+                                        <Link href={route('payments.create', { student_id: student.id,  })}>
+                                            <CreditCard className="h-4 w-4" />
+                                            Record New Payment
+                                        </Link>
+                                    </Button>
+                                </div> */}
+
+                                {/* Fee Structures Breakdown */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Fee Structures & Bills</CardTitle>
+                                        <CardDescription>Detailed breakdown of all fees assigned to this student.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {student.fees && student.fees.length > 0 ? (
+                                            <div className="rounded-md border">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Fee Name</TableHead>
+                                                            <TableHead>Session/Term</TableHead>
+                                                            <TableHead>Amount Due</TableHead>
+                                                            <TableHead>Amount Paid</TableHead>
+                                                            <TableHead>Balance</TableHead>
+                                                            <TableHead>Status</TableHead>
+                                                            <TableHead>Action</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {student.fees.map((fee) => {
+                                                            const due = parseFloat(fee.amount_due.toString());
+                                                            const paid = parseFloat(fee.amount_paid.toString());
+                                                            const balance = due - paid;
+
+                                                            return (
+                                                                <TableRow key={fee.id}>
+                                                                    <TableCell className="font-medium">{fee.fee_type?.name}</TableCell>
+                                                                    <TableCell className="text-muted-foreground text-sm">
+                                                                        {fee.fee_type?.academic_session} • {fee.fee_type?.term}
+                                                                    </TableCell>
+                                                                    <TableCell>{formatCurrency(due)}</TableCell>
+                                                                    <TableCell className="font-medium text-emerald-600">
+                                                                        {formatCurrency(paid)}
+                                                                    </TableCell>
+                                                                    <TableCell className="font-medium text-amber-600">
+                                                                        {formatCurrency(balance)}
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        {balance <= 0 ? (
+                                                                            <Badge className="border-emerald-200 bg-emerald-500/10 text-emerald-600">
+                                                                                Paid
+                                                                            </Badge>
+                                                                        ) : paid > 0 ? (
+                                                                            <Badge
+                                                                                variant="outline"
+                                                                                className="border-amber-200 bg-amber-500/10 text-amber-600"
+                                                                            >
+                                                                                Partial
+                                                                            </Badge>
+                                                                        ) : (
+                                                                            <Badge
+                                                                                variant="destructive"
+                                                                                className="border-red-200 bg-red-500/10 text-red-600"
+                                                                            >
+                                                                                Unpaid
+                                                                            </Badge>
+                                                                        )}
+                                                                    </TableCell>
+                                                                    <TableCell>
+                                                                        {balance > 0 && (
+                                                                            <Button asChild variant="outline" size="sm" className="gap-2">
+                                                                                <Link
+                                                                                    href={route('payments.create', {
+                                                                                        student_id: student.id,
+                                                                                        fee_type_id: fee.fee_type_id,
+                                                                                        amount: balance,
+                                                                                    })}
+                                                                                >
+                                                                                    <CreditCard className="h-4 w-4" />
+                                                                                    Pay
+                                                                                </Link>
+                                                                            </Button>
+                                                                        )}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            );
+                                                        })}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        ) : (
+                                            <div className="text-muted-foreground py-8 text-center text-sm">
+                                                No fees have been assigned to this student yet.
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Payment History */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Payment History</CardTitle>
+                                        <CardDescription>Log of all recorded transactions for this student.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {student.payments && student.payments.length > 0 ? (
+                                            <div className="rounded-md border">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Date</TableHead>
+                                                            <TableHead>Reference</TableHead>
+                                                            <TableHead>Method</TableHead>
+                                                            <TableHead className="text-right">Amount</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {student.payments.map((payment) => (
+                                                            <TableRow key={payment.id}>
+                                                                <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                                                                <TableCell className="font-mono text-xs">{payment.transaction_reference}</TableCell>
+                                                                <TableCell className="capitalize">
+                                                                    {payment.payment_method?.replace('_', ' ')}
+                                                                </TableCell>
+                                                                <TableCell className="text-right font-medium text-emerald-600">
+                                                                    +{formatCurrency(parseFloat(payment.amount.toString()))}
+                                                                </TableCell>
+                                                                <TableCell></TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        ) : (
+                                            <div className="text-muted-foreground py-8 text-center text-sm">
+                                                No payments have been recorded for this student.
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
                             </TabsContent>
                         </Tabs>
                     </div>

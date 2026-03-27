@@ -83,7 +83,8 @@ class StudentController extends Controller
      */
     public function show(Student $student)
     {
-        $student->load(['classroom', 'attendances' => function($query) {
+        $student->load(['classroom', 'fees.feeType', // Loads the bills and the details of what the bill is for
+            'payments', 'attendances' => function($query) {
             $query->whereMonth('date', now()->month)
                 ->whereYear('date', now()->year)
                 ->latest();

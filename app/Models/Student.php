@@ -79,9 +79,21 @@ class Student extends Model
         return $this->hasMany(ExamMark::class, 'student_id');
     }
 
+    public function fees(): HasMany
+    {
+        return $this->hasMany(StudentFee::class, 'user_id');
+    }
+
+
     /**
      * Relationship to the Classroom
      */
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class, 'user_id');
+    }
+
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class, 'classroom_id');

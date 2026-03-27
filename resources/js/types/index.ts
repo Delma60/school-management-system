@@ -175,6 +175,8 @@ export interface Student extends User {
     classroom?: Classroom;
     attendances?: Attendance[];
     exam_marks?: ExamMark[];
+    fees?: StudentFee[];
+    payments?: Payment[];
 }
 
 // index.ts
