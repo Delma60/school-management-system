@@ -25,6 +25,74 @@ export interface Classroom {
     timetable?:TimetableEntry[]
 }
 
+// ==================== Finance & Fees Interfaces ====================
+
+export interface FeeType {
+    id: number;
+    name: string;
+    amount: number | string; // Usually returned as string from decimal columns in Laravel
+    academic_session: string;
+    term: string;
+    status: 'active' | 'inactive';
+    meta?: Record<string, any> | null;
+    created_at?: string;
+    updated_at?: string;
+
+    // Relationships
+    student_fees?: StudentFee[];
+    classroom_fees?: ClassFee[]; // Snake case of the 'classroomFees' relationship
+    assigned_students?: number; // Used in index stats via withCount
+}
+
+export interface ClassFee {
+    id: number;
+    classroom_id: number;
+    fee_type_id: number;
+    amount_due: number | string;
+    amount_paid: number | string;
+    status?: string | null;
+    meta?: Record<string, any> | null;
+    created_at?: string;
+    updated_at?: string;
+
+    // Relationships
+    classroom?: Classroom;
+    fee_type?: FeeType;
+}
+
+export interface StudentFee {
+    id: number;
+    user_id: number;
+    fee_type_id: number;
+    amount_due: number | string;
+    amount_paid: number | string;
+    status?: string | null;
+    meta?: Record<string, any> | null;
+    created_at?: string;
+    updated_at?: string;
+
+    // Relationships
+    student?: Student;
+    fee_type?: FeeType;
+}
+
+export interface Payment {
+    id: number;
+    transaction_reference?: string;
+    student_id: number;
+    fee_type_id?: number | null;
+    amount: number | string;
+    payment_date: string;
+    payment_method?: string;
+    status?: string;
+    meta?: Record<string, any> | null;
+    created_at?: string;
+    updated_at?: string;
+
+    // Relationships
+    student?: Student;
+}
+
 // ==================== Subject Interface ====================
 export interface Subject {
     id: number;

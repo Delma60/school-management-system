@@ -272,7 +272,7 @@ class FeeController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $fee) {
-
+           
             $fee->update([
                 'name' => $validated['name'],
                 'amount' => $validated['amount'],

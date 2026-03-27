@@ -5,11 +5,12 @@ import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AppLayout from '@/layouts/app-layout';
+import { FeeType } from '@/types';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, CircleDashed, Clock, GraduationCap, Users } from 'lucide-react';
 import React from 'react';
 
-export default function ShowFeeStructure({ fee, stats }: { fee: any, stats: any }) {
+export default function ShowFeeStructure({ fee, stats }: { fee: FeeType, stats: any }) {
     // Helper to format currency
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(amount);
@@ -18,7 +19,6 @@ export default function ShowFeeStructure({ fee, stats }: { fee: any, stats: any 
     return (
         <AppLayout>
             <Head title={`${fee.name} - Details`} />
-            {JSON.stringify(fee.classroom_fee)}
 
             <div className="space-y-6 p-6">
                 {/* Header */}
@@ -37,7 +37,7 @@ export default function ShowFeeStructure({ fee, stats }: { fee: any, stats: any 
                                 </Badge>
                             </div>
                             <p className="text-muted-foreground text-sm">
-                                {fee.academic_session} • {fee.term} • Base Amount: {formatCurrency(fee.amount)}
+                                {fee.academic_session} • {fee.term} • Base Amount: {formatCurrency(parseFloat(fee.amount.toString()))}
                             </p>
                         </div>
                     </div>
@@ -134,16 +134,16 @@ export default function ShowFeeStructure({ fee, stats }: { fee: any, stats: any 
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {fee.student_fees.map((sf: any) => {
-                                                const balance = parseFloat(sf.amount_due) - parseFloat(sf.amount_paid);
+                                            {fee.student_fees.map((sf) => {
+                                                const balance = parseFloat(String(sf.amount_due )) - parseFloat(String(sf?.amount_paid));
                                                 return (
                                                     <TableRow key={sf.id}>
                                                         <TableCell className="font-medium">
-                                                            {sf.student?.name} {sf.student?.last_name}
+                                                            {sf.student?.name}
                                                         </TableCell>
-                                                        <TableCell>{formatCurrency(sf.amount_due)}</TableCell>
+                                                        <TableCell>{formatCurrency(parseFloat(String(sf.amount_due)))}</TableCell>
                                                         <TableCell className="text-emerald-600 dark:text-emerald-400">
-                                                            {formatCurrency(sf.amount_paid)}
+                                                            {formatCurrency(parseFloat((sf.amount_paid || 0).toString()))}
                                                         </TableCell>
                                                         <TableCell className="text-amber-600 dark:text-amber-400">
                                                             {formatCurrency(balance)}
@@ -151,7 +151,7 @@ export default function ShowFeeStructure({ fee, stats }: { fee: any, stats: any 
                                                         <TableCell>
                                                             {balance <= 0 ? (
                                                                 <Badge className="bg-emerald-500 hover:bg-emerald-600">Paid</Badge>
-                                                            ) : sf.amount_paid > 0 ? (
+                                                            ) : parseFloat(sf.amount_paid.toString()) > 0 ? (
                                                                 <Badge variant="outline" className="text-amber-600 border-amber-600">Partial</Badge>
                                                             ) : (
                                                                 <Badge variant="destructive">Unpaid</Badge>
@@ -189,11 +189,11 @@ export default function ShowFeeStructure({ fee, stats }: { fee: any, stats: any 
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {fee.classroom_fees.map((cf: any) => (
+                                            {fee.classroom_fees.map((cf) => (
                                                 <TableRow key={cf.id}>
                                                     <TableCell className="font-medium">{cf.classroom?.name}</TableCell>
                                                     <TableCell>{cf.classroom?.grade_level}</TableCell>
-                                                    <TableCell>{new Date(cf.created_at).toLocaleDateString()}</TableCell>
+                                                    <TableCell>{new Date(cf?.created_at?.toString() || '').toLocaleDateString()}</TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
