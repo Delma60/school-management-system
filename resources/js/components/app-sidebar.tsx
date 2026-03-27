@@ -149,8 +149,8 @@ const navMain = [
     isActive: url.startsWith('/dashboard/admin'),
     items: [
       { title: 'Roles & Permissions', url: '/dashboard/roles' },
-      { title: 'System Logs', url: '/dashboard/admin/logs' },
-      { title: 'School Profile', url: '/dashboard/admin/profile' },
+      { title: 'System Logs', url:  route("system-logs.index") },
+      { title: 'School Profile', url: route("school-profile.index") },
     ],
   },
   {

@@ -7,6 +7,7 @@ use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Models\Classroom;
 use App\Models\Role;
+use App\Models\SystemLog;
 use App\Models\User;
 use App\Services\ViewResolver;
 use Illuminate\Http\Request;
@@ -72,6 +73,15 @@ class StudentController extends Controller
             'role_id'      => Role::where('slug', 'student')->first()->id,
             'meta' => $metaData
         ]));
+
+        // Inside store() method, after creating the student:
+        SystemLog::logActivity(
+            'student_admitted', 
+            "Admitted new student: {$student->first_name} {$student->last_name}",
+            'info',
+            ['student_id' => $student->id, 'admission_number' => $student->admission_number]
+        );
+
 
 
 
@@ -162,5 +172,14 @@ class StudentController extends Controller
     public function destroy(Student $student)
     {
         //
+        // Inside destroy() method:
+        SystemLog::logActivity(
+            'student_deleted', 
+            "Deleted student record for ID: {$student->id}",
+            'warning',
+            ['student_name' => "{$student->first_name} {$student->last_name}"]
+        );
+        $student->delete();
+        return back()->with('success', 'Student record deleted successfully.');
     }
 }

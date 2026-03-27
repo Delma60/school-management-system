@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use App\Models\Permission;
+use App\Models\SystemLog;
 use Illuminate\Http\Request;
 
 class RolesController extends Controller
@@ -79,6 +80,14 @@ class RolesController extends Controller
         if (!empty($validated['permissions'])) {
             $role->permissions()->sync($validated['permissions']);
         }
+
+        // Inside the method that assigns roles/permissions to a user:
+        SystemLog::logActivity(
+            'role_assigned', 
+            "Assigned the '{$role->name}' role to User ID: {$user->id}",
+            'warning', // Warning level because it's a security-sensitive action
+            ['assigned_by' => auth()->id(), 'target_user' => $user->email]
+        );
 
         return redirect()->route('roles.index')
             ->with('success', "Role '{$role->name}' created successfully.");

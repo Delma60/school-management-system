@@ -1,140 +1,115 @@
-import React from "react"
-import { Users, TrendingUp } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, UserCheck } from 'lucide-react';
+import React from 'react';
 import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  CartesianGrid
-} from "recharts"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { cn } from "@/lib/utils"
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Legend,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from 'recharts';
 
 interface AttendanceData {
-  date: string
-  count: number
+    name: string;
+    students: number;
+    staff: number;
 }
 
-interface AttendanceChartProps {
-  data: AttendanceData[]
-  className?: string
-}
-
-export function DailyAttendanceChart({ data, className }: AttendanceChartProps) {
-  return (
-    <Card className={cn("bg-card text-card-foreground shadow-md", className)}>
-      <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/20 py-5">
-        <div className="grid gap-1.5">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <CardTitle className="text-xl font-bold">Daily Attendance</CardTitle>
-          </div>
-          <CardDescription>
-            Total student presence recorded over the last 7 days
-          </CardDescription>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-1 text-emerald-500 font-bold">
-                <TrendingUp className="h-4 w-4" />
-                <span>+2.4%</span>
-            </div>
-            <span className="text-[10px] text-muted-foreground uppercase font-medium">vs last week</span>
-        </div>
-      </CardHeader>
-
-      <CardContent className="pt-6">
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
-              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0.3}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--primary)"
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-              </defs>
-
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                className="stroke-muted"
-              />
-
-              <XAxis
-                dataKey="date"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                dy={10}
-              />
-
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-              />
-
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="rounded-lg border bg-background p-2 shadow-sm">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] uppercase text-muted-foreground font-bold">
-                              Date
-                            </span>
-                            <span className="text-sm font-bold">
-                              {payload[0].payload.date}
-                            </span>
-                          </div>
-                          <div className="flex flex-col text-right">
-                            <span className="text-[10px] uppercase text-muted-foreground font-bold">
-                              Students
-                            </span>
-                            <span className="text-sm font-bold text-primary">
-                              {payload[0].value}
-                            </span>
-                          </div>
+export function DailyAttendanceChart({ data }: { data: AttendanceData[] }) {
+    // Custom Tooltip to make it look sleek in both light and dark modes
+    const CustomTooltip = ({ active, payload, label }: any) => {
+        if (active && payload && payload.length) {
+            return (
+                <div className="bg-background border rounded-lg shadow-lg p-3 text-sm">
+                    <p className="font-bold mb-2 border-b pb-1">{label} Attendance</p>
+                    {payload.map((entry: any, index: number) => (
+                        <div key={index} className="flex items-center gap-2 py-1">
+                            <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: entry.color }}
+                            />
+                            <span className="text-muted-foreground capitalize">{entry.name}:</span>
+                            <span className="font-medium">{entry.value} present</span>
                         </div>
-                      </div>
-                    )
-                  }
-                  return null
-                }}
-              />
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    };
 
-              <Area
-                type="monotone"
-                dataKey="count"
-                stroke="var(--primary)"
-                strokeWidth={2}
-                fillOpacity={1}
-                fill="url(#colorCount)"
-                animationDuration={1500}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
-  )
+    return (
+        <Card className="flex flex-col h-full">
+            <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle className="text-lg">Daily Attendance</CardTitle>
+                        <CardDescription>Present & Late counts over the last 7 days</CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="flex-1 pb-6">
+                {data && data.length > 0 ? (
+                    <div className="h-[300px] w-full mt-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                                data={data}
+                                margin={{
+                                    top: 10,
+                                    right: 10,
+                                    left: -20,
+                                    bottom: 0,
+                                }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted/40" />
+                                <XAxis 
+                                    dataKey="name" 
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: 'currentColor', fontSize: 12, opacity: 0.7 }}
+                                    dy={10}
+                                />
+                                <YAxis 
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: 'currentColor', fontSize: 12, opacity: 0.7 }}
+                                />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'currentColor', opacity: 0.05 }} />
+                                <Legend 
+                                    iconType="circle" 
+                                    wrapperStyle={{ fontSize: '12px', paddingTop: '20px', opacity: 0.8 }}
+                                />
+                                
+                                {/* Students Bar (Blue) */}
+                                <Bar 
+                                    dataKey="students" 
+                                    name="Students" 
+                                    fill="#3b82f6" 
+                                    radius={[4, 4, 0, 0]} 
+                                    maxBarSize={40}
+                                />
+                                
+                                {/* Staff Bar (Emerald Green) */}
+                                <Bar 
+                                    dataKey="staff" 
+                                    name="Staff" 
+                                    fill="#10b981" 
+                                    radius={[4, 4, 0, 0]} 
+                                    maxBarSize={40}
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="h-[300px] w-full flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-lg mt-4">
+                        <UserCheck className="h-8 w-8 mb-2 opacity-20" />
+                        <p className="text-sm">No attendance data available yet.</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
 }

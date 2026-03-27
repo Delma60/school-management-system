@@ -3,18 +3,24 @@
 
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExaminationController;
 use App\Http\Controllers\ExamMarkController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FeeController;
 use App\Http\Controllers\GradingScaleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PerformanceLogController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\SchoolEventController;
+use App\Http\Controllers\Settings\SchoolProfileController;
+use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\TeachersController;
 use App\Http\Controllers\TimetableController;
 use App\Models\Examination;
@@ -36,10 +42,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::prefix("dashboard")->group( function(){
-        Route::get("/", function () {
-            $events = SchoolEvent::all();
-            return Inertia::render('dashboard', compact("events"));
-        })->name("dashboard");
+        Route::get("/", [DashboardController::class, "index"])->name("dashboard");
 
         Route::prefix("academics")->group(function(){
             Route::get("/classes",  [ClassroomController::class, "index"]);
@@ -79,13 +82,26 @@ Route::middleware(['auth'])->group(function () {
         });
         Route::resource("roles", RolesController::class);
 
+// Displays the form
+        Route::get('/school-profile', [SchoolProfileController::class, 'index'])
+            ->name('school-profile.index');
+
+                // Saves the form (Using POST so the logo image uploads perfectly)
+                Route::post('/school-profile', [SchoolProfileController::class, 'update'])
+                    ->name('school-profile.update');
+                        Route::resource("system-logs", SystemLogController::class);
+
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
         Route::prefix('finance')->group(function () {
-        Route::resource('fees', FeeController::class);
-        Route::resource('payments', PaymentController::class);
-        // Future routes to build out:
-        // Route::post('/fees/payment', [FeeController::class, 'storePayment'])->name('fees.payment.store');
-        // Route::post('/fees/structure', [FeeController::class, 'storeStructure'])->name('fees.structure.store');
-    });
+            Route::resource('fees', FeeController::class);
+            Route::resource('payments', PaymentController::class);
+            Route::resource('expenses', ExpenseController::class);
+            Route::resource('reports', ReportController::class);
+            // Future routes to build out:
+            // Route::post('/fees/payment', [FeeController::class, 'storePayment'])->name('fees.payment.store');
+            // Route::post('/fees/structure', [FeeController::class, 'storeStructure'])->name('fees.structure.store');
+        });
     });
 });
 

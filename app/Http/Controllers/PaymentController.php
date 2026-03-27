@@ -6,6 +6,7 @@ use App\Models\FeeType;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\StudentFee;
+use App\Models\SystemLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -103,6 +104,12 @@ class PaymentController extends Controller
         });
 
         // 3. Redirect back to the fee structure details page with a success message
+        SystemLog::logActivity(
+            'payment_recorded', 
+            "Recorded a payment of NGN {$validated['amount']} for Student ID: {$validated['student_id']}",
+            'info',
+            ['reference' => $validated['transaction_reference'], 'method' => $validated['payment_method']]
+        );
         return redirect()
             ->route('fees.show', $validated['fee_type_id'])
             ->with('success', 'Payment recorded successfully.');

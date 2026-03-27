@@ -8,6 +8,7 @@ use App\Models\FeeType;
 use App\Models\Payment;
 use App\Models\Student;
 use App\Models\StudentFee;
+use App\Models\SystemLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -86,10 +87,29 @@ class FeeController extends Controller
                 ];
             });
 
+            $defaulters = StudentFee::with(['student.classroom', 'feeType'])
+                ->whereHas('feeType', function ($q) use ($currentSession, $currentTerm) {
+                    $q->where('academic_session', $currentSession)->where('term', $currentTerm);
+                })
+                ->whereColumn('amount_due', '>', 'amount_paid') // Only get unpaid or partially paid
+                ->orderByRaw('(amount_due - amount_paid) DESC') // Order by highest debt first
+                ->get()
+                ->map(function ($fee) {
+                    return [
+                        'id' => $fee->id,
+                        'student_id' => $fee->user_id,
+                        'student_name' => $fee->student->name ?? trim(($fee->student->first_name ?? '') . ' ' . ($fee->student->last_name ?? '')),
+                        'class' => $fee->student->classroom->name ?? 'N/A',
+                        'fee_name' => $fee->feeType->name,
+                        'fee_type_id' => $fee->feeType->id,
+                        'balance' => (float) ($fee->amount_due - $fee->amount_paid),
+                    ];
+                });
         return inertia('admin/finance/fees/index', [
             'stats' => $stats,
             'feeStructures' => $feeStructures,
             'recentPayments' => $recentPayments,
+            'defaulters' => $defaulters,
             'currentTerm' => "$currentSession - $currentTerm",
         ]);
     }
@@ -349,6 +369,13 @@ class FeeController extends Controller
         $this->authorize('delete', $fee);
 
         $fee->delete();
+
+        SystemLog::logActivity(
+            'fee_deleted', 
+            "Deleted the fee structure: {$fee->name}",
+            'warning',
+            ['fee_id' => $fee->id, 'amount' => $fee->amount]
+        );
 
         return redirect()
             ->route('fees.index')

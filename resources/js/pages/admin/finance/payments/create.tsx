@@ -64,7 +64,6 @@ export default function RecordPayment({
 
             <div className="space-y-6 p-6">
                 {/* Header */}
-                {JSON.stringify(params)}
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" asChild>
                         <Link href={route('fees.index')}>

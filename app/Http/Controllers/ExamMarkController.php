@@ -8,6 +8,7 @@ use App\Models\Student;
 use App\Models\Examination;
 use App\Models\Classroom;
 use App\Models\GradingScale;
+use App\Models\SystemLog;
 use App\Services\ViewResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -171,6 +172,13 @@ class ExamMarkController extends Controller
             Student::where('id', $mark['student_id'])->update(['rank' => $mark['rank'] ?? null]);
         }
 
+        // Inside the method where you save/update student grades:
+        SystemLog::logActivity(
+            'grades_updated', 
+            "Updated exam scores for Subject ID: {$request->subject_id} in Class ID: {$request->classroom_id}",
+            'info',
+            ['exam_id' => $request->examination_id]
+        );
         return back()->with('message', 'Marks saved successfully!');
     }
 
