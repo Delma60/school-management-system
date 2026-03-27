@@ -272,7 +272,7 @@ class FeeController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $fee) {
-           
+
             $fee->update([
                 'name' => $validated['name'],
                 'amount' => $validated['amount'],
@@ -321,7 +321,8 @@ class FeeController extends Controller
                 }
 
                 foreach ($allStudentIds as $studentId) {
-                    StudentFee::firstOrCreate(
+                    Log::info("Assigning fee to student ID: $studentId for fee ID: {$fee->id} amount: {$fee->amount}");
+                    StudentFee::updateOrInsert(
                         [
                             'user_id' => $studentId,
                             'fee_type_id' => $fee->id,
