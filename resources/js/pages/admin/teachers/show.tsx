@@ -1,5 +1,6 @@
 import { AssignSubjectsModal } from '@/components/assign-subject-to-teacher';
 import { EditTeacherSheet } from '@/components/edit-teacher-sheet';
+import { ResetPasswordModal } from '@/components/reset-password-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import { useState } from 'react';
 interface Props {
     teacher: Teacher;
     subjects: Subject[];
-    schedule: TimetableEntry[]
+    schedule: TimetableEntry[];
 }
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -51,9 +52,12 @@ export default function TeacherShow({ teacher, subjects, schedule }: Props) {
                         </Link>
                         <h1 className="text-2xl font-bold tracking-tight">Faculty Profile</h1>
                     </div>
-                    <Button variant="outline" className="gap-2" onClick={() => setOpen(true)}>
-                        <Edit className="h-4 w-4" /> Edit Profile
-                    </Button>
+                    <div className="">
+                        <ResetPasswordModal user={teacher} />
+                        <Button variant="outline" className="gap-2" onClick={() => setOpen(true)}>
+                            <Edit className="h-4 w-4" /> Edit Profile
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">

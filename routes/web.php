@@ -25,7 +25,10 @@ use App\Http\Controllers\TeachersController;
 use App\Http\Controllers\TimetableController;
 use App\Models\Examination;
 use App\Models\SchoolEvent;
+use App\Models\Setting;
 use App\Models\Staff;
+use App\Models\Student;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -37,7 +40,44 @@ Route::bind('exam', function ($value) {
 
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    $stats = [
+        'students' => Student::count(),
+        'teachers' => Staff::count(),
+        'courses' => 45, // You can replace this with Subject::count() later
+    ];
+
+    // 2. Fetch Upcoming Events (Next 3 events)
+    $upcomingEvents = SchoolEvent::where('date', '>=', now())
+        ->orderBy('date', 'asc')
+        ->take(3)
+        ->get()
+        ->map(function ($event) {
+            return [
+                'id' => $event->id,
+                'title' => $event->title,
+                'date' => Carbon::parse($event->date)->format('M d, Y'),
+                'day' => Carbon::parse($event->date)->format('d'),
+                'month' => Carbon::parse($event->date)->format('M'),
+                'type' => $event->type ?? 'General',
+            ];
+        });
+
+    // 3. Fetch Global School Settings (For the footer and nav)
+    $settings = Setting::pluck('value', 'key')->toArray();
+    $schoolInfo = [
+        'name' => $settings['school_name'] ?? 'Delma International',
+        'email' => $settings['contact_email'] ?? 'info@school.com',
+        'phone' => $settings['school_phone'] ?? '+234 800 000 0000',
+        'address' => $settings['address'] ?? '123 Education Way, Tech City',
+        'logo' => $settings['school_logo'] ?? null,
+    ];
+
+    return Inertia::render('welcome', [
+        'canLogin' => Route::has('login'),
+        'stats' => $stats,
+        'events' => $upcomingEvents,
+        'school' => $schoolInfo,
+    ]);
 })->name('welcome');
 
 Route::middleware(['auth'])->group(function () {
@@ -66,6 +106,9 @@ Route::middleware(['auth'])->group(function () {
             Route::resource("records", StaffController::class)->names("staff")->parameters([
                 'records' => 'staff'
             ]);
+
+            Route::post('/records/{user}/password', [StaffController::class, 'updatePassword'])
+        ->name('staff.password.update');
 
             Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
             Route::post('/payroll/run', [PayrollController::class, 'runPayroll'])->name('payroll.run');

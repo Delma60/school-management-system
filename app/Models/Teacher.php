@@ -6,6 +6,7 @@ use App\HasRole;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Teacher extends Model
 {
@@ -74,5 +75,10 @@ class Teacher extends Model
     public function timetable(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Timetable::class, 'teacher_id');
+    }
+
+     public function classrooms(): HasMany
+    {
+        return $this->hasMany(Classroom::class, 'teacher_id');
     }
 }

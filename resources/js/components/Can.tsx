@@ -1,61 +1,42 @@
-import { SharedData } from '@/types';
+import { Role } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
+
+// Define the roles available in your system
 
 interface CanProps {
-    permission: string | string[];
-    fallback?: ReactNode;
+    role?: Role['name'] | Role['name'][];
+    notRole?: Role['name'] | Role['name'][];
+    // notRole?: Role | Role[];
     children: ReactNode;
+    fallback?: ReactNode;
 }
 
-/**
- * Can Component - Works like Blade's @can directive
- *
- * Checks if the authenticated user has the required permission(s).
- * If the user has the permission, renders the children.
- * If not, renders the fallback content (if provided) or nothing.
- *
- * Usage:
- * <Can permission="classroom.create">
- *   <button>Create Classroom</button>
- * </Can>
- *
- * With fallback:
- * <Can permission="user.delete" fallback={<span>You don't have permission</span>}>
- *   <button>Delete User</button>
- * </Can>
- *
- * Multiple permissions (user needs ANY):
- * <Can permission={['classroom.create', 'classroom.edit']}>
- *   <button>Modify Classroom</button>
- * </Can>
- */
-export function Can({ permission, fallback, children }: CanProps) {
-    const { auth } = usePage<SharedData>().props;
+export function Can({ role, notRole, children, fallback = null }: CanProps) {
+    // Safely grab the authenticated user from Inertia
+    const user = usePage().props.auth?.user as { role: Role } | null;
 
-    // No user logged in - show fallback
-    if (!auth?.user) {
-        return <>{fallback}</>;
+    // If no one is logged in, deny access
+    if (!user) return <>{fallback}</>;
+
+    const userRole = user.role.name;
+
+    // 1. Check Negative Constraints First (e.g., "hide this from students")
+    if (notRole) {
+        const forbiddenRoles = Array.isArray(notRole) ? notRole : [notRole];
+        if (forbiddenRoles.includes(userRole)) {
+            return <>{fallback}</>;
+        }
     }
 
-    // Get user's permissions
-    const userPermissions = auth.permissions || [];
-
-    // Check if user has the required permission(s)
-    const hasPermission = Array.isArray(permission)
-        ? permission.some((p) => userPermissions.includes(p)) // Has ANY of the permissions
-        : userPermissions.includes(permission); // Has THIS permission
-
-    // Admin users have all permissions
-    const isAdmin = auth.user.role?.slug === 'admin';
-
-    // Show children if user has permission or is admin
-    if (hasPermission || isAdmin) {
-        return <>{children}</>;
+    // 2. Check Positive Constraints (e.g., "only admins and staff can see this")
+    if (role) {
+        const allowedRoles = Array.isArray(role) ? role : [role];
+        if (!allowedRoles.includes(userRole)) {
+            return <>{fallback}</>;
+        }
     }
 
-    // Show fallback if provided
-    return <>{fallback}</>;
+    // 3. If they pass all checks, render the content!
+    return <>{children}</>;
 }
-
-export default Can;

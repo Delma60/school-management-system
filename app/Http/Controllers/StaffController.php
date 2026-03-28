@@ -6,11 +6,13 @@ use App\Models\Staff;
 use App\Http\Requests\StoreStaffRequest;
 use App\Http\Requests\UpdateStaffRequest;
 use App\Models\Role;
+use App\Models\SystemLog;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 
 class StaffController extends Controller
@@ -165,4 +167,33 @@ class StaffController extends Controller
     {
         //
     }
+
+    public function updatePassword(Request $request, Staff $user)
+    {
+        // 1. Optional but recommended: Ensure the target user is actually staff/teacher
+        if (in_array($user->role, ['student'])) {
+            return back()->with('error', 'You cannot use this endpoint for students.');
+        }
+
+        // 2. Validate the new password
+        $validated = $request->validate([
+            'password' => ['required', 'confirmed'],
+        ]);
+
+        // 3. Update the password
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        // 4. Log this sensitive action!
+        SystemLog::logActivity(
+            'admin_password_reset',
+            "Admin forcefully reset the password for {$user->name} ({$user->email}).",
+            'warning', // Warning level because it's a security event
+            ['target_user_id' => $user->id]
+        );
+
+        return back()->with('success', "Password for {$user->first_name} has been reset successfully.");
+    }
 }
+
