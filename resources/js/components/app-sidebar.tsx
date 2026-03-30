@@ -1,61 +1,5 @@
-// import { NavFooter } from '@/components/nav-footer';
-// import { NavMain } from '@/components/nav-main';
-// import { NavUser } from '@/components/nav-user';
-// import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-// import { type NavItem } from '@/types';
-// import { Link } from '@inertiajs/react';
-// import { BookOpen, Folder, LayoutGrid } from 'lucide-react';
-// import AppLogo from './app-logo';
-
-// const mainNavItems: NavItem[] = [
-//     {
-//         title: 'Dashboard',
-//         url: '/dashboard',
-//         icon: LayoutGrid,
-//     },
-// ];
-
-// const footerNavItems: NavItem[] = [
-//     {
-//         title: 'Repository',
-//         url: 'https://github.com/laravel/react-starter-kit',
-//         icon: Folder,
-//     },
-//     {
-//         title: 'Documentation',
-//         url: 'https://laravel.com/docs/starter-kits',
-//         icon: BookOpen,
-//     },
-// ];
-
-// export function AppSidebar() {
-//     return (
-//         <Sidebar collapsible="icon" variant="inset">
-//             <SidebarHeader>
-//                 <SidebarMenu>
-//                     <SidebarMenuItem>
-//                         <SidebarMenuButton size="lg" asChild>
-//                             <Link href="/dashboard" prefetch>
-//                                 <AppLogo />
-//                             </Link>
-//                         </SidebarMenuButton>
-//                     </SidebarMenuItem>
-//                 </SidebarMenu>
-//             </SidebarHeader>
-
-//             <SidebarContent>
-//                 <NavMain items={mainNavItems} />
-//             </SidebarContent>
-
-//             <SidebarFooter>
-//                 <NavFooter items={footerNavItems} className="mt-auto" />
-//                 <NavUser />
-//             </SidebarFooter>
-//         </Sidebar>
-//     );
-// }
-
 import { Link, usePage } from '@inertiajs/react';
+import * as LucideIcons from 'lucide-react'; // Import all icons for dynamic mapping
 import { ChevronRight, School } from 'lucide-react';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -76,13 +20,34 @@ import {
 } from '@/components/ui/sidebar';
 import { NavGroup } from '@/types';
 
+// 1. Helper to render Lucide components dynamically from a string
+const DynamicIcon = ({ name, className }: { name?: string; className?: string }) => {
+    if (!name) return null;
+    
+    const IconComponent = LucideIcons[name];
+    
+    // Fallback to a default circle if the icon name is misspelled or doesn't exist
+    if (!IconComponent) return <LucideIcons.Circle className={className} />;
+    
+    return <IconComponent className={className} />;
+};
+
+// 2. Helper to extract user initials (e.g., "John Doe" -> "JD")
+const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    return name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+};
+
 export function AppSidebar() {
-    // Get current URL from Inertia to handle active states
     const {
         url,
-        props: { auth, sidebar: sidebarNavItems, ...rest },
-    } = usePage(); // Gets the current reactive URL from Inertia
-    // const { canAccess } = usePermission();
+        props: { auth, sidebar: sidebarNavItems },
+    } = usePage<any>();
 
     return (
         <Sidebar variant="inset">
@@ -111,44 +76,46 @@ export function AppSidebar() {
                     <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {(sidebarNavItems as NavGroup[]).map((item) => (
+                            {(sidebarNavItems || []).map((item:NavGroup) => (
                                 <SidebarMenuItem key={item.title}>
-                                    {item.items ? (
+                                    {item.items && item.items.length > 0 ? (
                                         /* Collapsible Menu Item for categories with sub-items */
                                         <Collapsible defaultOpen={item.isActive} className="group/collapsible">
                                             <CollapsibleTrigger asChild>
                                                 <SidebarMenuButton tooltip={item.title}>
-                                                    {/* <item.icon className="size-4" /> */}
-                                                    {/* <Icon  /> */}
-                                                    <div className="icon-a-arrow-down"></div>
+                                                    {/* Dynamically render the icon */}
+                                                    <DynamicIcon name={item.icon} className="size-4" />
                                                     <span>{item.title}</span>
                                                     <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                                                 </SidebarMenuButton>
                                             </CollapsibleTrigger>
                                             <CollapsibleContent>
                                                 <SidebarMenuSub>
-                                                    {item.items.map((subItem) => (
-                                                        <SidebarMenuSubItem key={subItem.title}>
-                                                            <SidebarMenuSubButton
-                                                                asChild
-                                                                isActive={
-                                                                    url === subItem.url || subItem.url.includes(url) || url.includes(subItem.url)
-                                                                }
-                                                            >
-                                                                <Link href={item.url.includes("/") ?item.url:route(item.url)}>{subItem.title}</Link>
-                                                            </SidebarMenuSubButton>
-                                                        </SidebarMenuSubItem>
-                                                    ))}
+                                                    {item.items.map((subItem) => {
+                                                        // Format the URL safely based on named routes vs paths
+                                                        const itemUrl = subItem.url.startsWith('/') 
+                                                            ? subItem.url 
+                                                            : route(subItem.url);
+
+                                                        // Sub-item active state
+                                                        const isSubActive = url === subItem.url || url.startsWith(subItem.url.replace('.index', ''));
+
+                                                        return (
+                                                            <SidebarMenuSubItem key={subItem.title}>
+                                                                <SidebarMenuSubButton asChild isActive={isSubActive}>
+                                                                    <Link href={itemUrl}>{subItem.title}</Link>
+                                                                </SidebarMenuSubButton>
+                                                            </SidebarMenuSubItem>
+                                                        );
+                                                    })}
                                                 </SidebarMenuSub>
                                             </CollapsibleContent>
                                         </Collapsible>
                                     ) : (
                                         /* Standard Menu Item without sub-items */
                                         <SidebarMenuButton asChild isActive={item.isActive} tooltip={item.title}>
-                                            <Link href={item.url.includes('/') ? item.url : route(item.url)}>
-                                                {/* <item.icon className="size-4" /> */}
-                                                <div data-lucide="menu"></div>
-
+                                            <Link href={item.url.startsWith('/') ? item.url : route(item.url)}>
+                                                <DynamicIcon name={item.icon} className="size-4" />
                                                 <span>{item.title}</span>
                                             </Link>
                                         </SidebarMenuButton>
@@ -166,12 +133,13 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-slate-200 dark:bg-slate-800">
-                                {/* Placeholder for user avatar */}
-                                <span className="text-xs font-bold">AJ</span>
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    {getInitials(auth?.user?.name)}
+                                </span>
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
-                                <span className="truncate font-semibold">{auth?.user?.name}</span>
-                                <span className="truncate text-xs text-slate-500">{auth?.user?.role?.name}</span>
+                                <span className="truncate font-semibold">{auth?.user?.name || 'Guest User'}</span>
+                                <span className="truncate text-xs text-slate-500">{auth?.user?.role?.name || 'Staff'}</span>
                             </div>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

@@ -289,6 +289,7 @@ export interface NavGroup {
     items: NavItem[];
     permission:string;
     url:string;
+    icon?: string |LucideIcon|null
 }
 
 export interface NavItem {

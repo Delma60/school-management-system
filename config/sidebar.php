@@ -7,24 +7,25 @@ return [
         'url' => 'dashboard',
         'icon' => 'LayoutDashboard',
         'isActive' => false,
-        // Typically no permission needed; visible to all logged-in users
+        // Visible to all authenticated users
     ],
 
     // ==========================================
     // TEACHER & STAFF SPECIFIC MODULES
+    // Scope these explicitly to the Teacher role 
+    // to prevent Admins from seeing "My..." menus
     // ==========================================
     [
         'title' => 'My Classes',
         'url' => '/dashboard/teacher/classes',
         'icon' => 'BookOpen',
         'isActive' => false,
-        'permission' => 'classroom.view', 
+        'roleOrPermission' => 'role:teacher,permission:classroom.view', 
         'items' => [
-            ['title' => 'Class Rosters', 'url' => '/dashboard/teacher/classes/rosters', 'permission' => 'classroom.view'],
-            ['title' => 'My Timetable', 'url' => '/dashboard/teacher/timetable', 'permission' => 'timetable.view'],
-            ['title' => 'Lesson Plans', 'url' => '/dashboard/teacher/lesson-plans', 'permission' => 'lessonplan.view'],
-            // Note: 'Assignment' permission isn't in your seeder yet, mapping to subject.view for now
-            ['title' => 'Assignments', 'url' => '/dashboard/teacher/assignments', 'permission' => 'subject.view'], 
+            ['title' => 'Class Rosters', 'url' => '/dashboard/teacher/classes/rosters', 'roleOrPermission' => 'role:teacher,permission:classroom.view'],
+            ['title' => 'My Timetable', 'url' => '/dashboard/teacher/timetable', 'roleOrPermission' => 'role:teacher,permission:timetable.view'],
+            ['title' => 'Lesson Plans', 'url' => '/dashboard/teacher/lesson-plans', 'roleOrPermission' => 'role:teacher,permission:lessonplan.view'],
+            ['title' => 'Assignments', 'url' => '/dashboard/teacher/assignments', 'roleOrPermission' => 'role:teacher,permission:subject.view'], 
         ],
     ],
 
@@ -33,13 +34,12 @@ return [
         'url' => '/dashboard/teacher/students',
         'icon' => 'Users',
         'isActive' => false,
-        'permission' => 'student.view',
+        'roleOrPermission' => 'role:teacher,permission:student.view',
         'items' => [
-            ['title' => 'Student Directory', 'url' => '/dashboard/teacher/students/directory', 'permission' => 'student.view'],
-            ['title' => 'Mark Attendance', 'url' => '/dashboard/teacher/attendance', 'permission' => 'attendance.create'],
-            ['title' => 'Examinations & Grading', 'url' => '/dashboard/teacher/grades', 'permission' => 'exam.manage-results'],
-            // Note: 'Behavioral Logs' isn't in your seeder, mapping to student.view for now
-            ['title' => 'Behavioral Logs', 'url' => '/dashboard/teacher/students/behavior', 'permission' => 'student.view'], 
+            ['title' => 'Student Directory', 'url' => '/dashboard/teacher/students/directory', 'roleOrPermission' => 'role:teacher,permission:student.view'],
+            ['title' => 'Mark Attendance', 'url' => '/dashboard/teacher/attendance', 'roleOrPermission' => 'role:teacher,permission:attendance.create'],
+            ['title' => 'Examinations & Grading', 'url' => '/dashboard/teacher/grades', 'roleOrPermission' => 'role:teacher,permission:exam.manage-results'],
+            ['title' => 'Behavioral Logs', 'url' => '/dashboard/teacher/students/behavior', 'roleOrPermission' => 'role:teacher,permission:student.view'], 
         ],
     ],
 
@@ -48,71 +48,62 @@ return [
         'url' => '/dashboard/teacher/hr',
         'icon' => 'Briefcase',
         'isActive' => false,
-        'permission' => 'leave.create', // Or payroll.view
+        'roleOrPermission' => 'role:teacher,permission:leave.create', 
         'items' => [
-            ['title' => 'Leave Requests', 'url' => '/dashboard/teacher/leave', 'permission' => 'leave.create'],
-            ['title' => 'My Payslips', 'url' => '/dashboard/teacher/payslips', 'permission' => 'payroll.view'],
-            ['title' => 'Profile Settings', 'url' =>  'profile.edit'], // Usually open to everyone
+            ['title' => 'Leave Requests', 'url' => '/dashboard/teacher/leave', 'roleOrPermission' => 'role:teacher,permission:leave.create'],
+            ['title' => 'My Payslips', 'url' => '/dashboard/teacher/payslips', 'roleOrPermission' => 'role:teacher,permission:payroll.view'],
+            ['title' => 'Profile Settings', 'url' => 'profile.edit'], // Usually open to everyone
         ],
     ],
 
     // ==========================================
     // SHARED MODULES (Admin & Staff)
+    // No role specified, so it falls back to purely permission-based
     // ==========================================
     [
         'title' => 'Communication',
         'url' => '/dashboard/notices',
         'icon' => 'Megaphone',
         'isActive' => false,
-        'permission' => 'event.view', // Closest match in your seeder to "Notices"
+        'roleOrPermission' => 'permission:event.view',
         'items' => [
-            ['title' => 'Noticeboard', 'url' => '/dashboard/notices', 'permission' => 'event.view'],
-            // Messages isn't in the seeder, falling back to event.view
-            ['title' => 'Messages', 'url' => '/dashboard/teacher/messages', 'permission' => 'event.view'],
+            ['title' => 'Noticeboard', 'url' => '/dashboard/notices', 'roleOrPermission' => 'permission:event.view'],
+            ['title' => 'Messages', 'url' => '/dashboard/teacher/messages', 'roleOrPermission' => 'permission:event.view'],
         ],
     ],
 
     // ==========================================
     // ADMIN SPECIFIC MODULES
+    // Scope these explicitly to the Admin role 
+    // to prevent Teachers from seeing global menus
     // ==========================================
     [
         'title' => 'Academics',
         'url' => '/dashboard/academics',
         'icon' => 'BookOpen',
         'isActive' => false,
-        'permission' => 'classroom.view', // Gatekeeper for this menu
+        'roleOrPermission' => 'notRole:teacher|student,permission:classroom.view', 
         'items' => [
-            ['title' => 'Classrooms', 'url' =>  'classrooms.index ', 'permission' => 'classroom.view'],
-            ['title' => 'Subjects & Curricula', 'url' =>  'subjects.index ', 'permission' => 'subject.view'],
-            ['title' => 'Timetables', 'url' =>  'timetables.index ', 'permission' => 'timetable.view'],
-            ['title' => 'Examinations', 'url' =>  'exams.index ', 'permission' => 'exam.view'],
-            ['title' => 'Grading Scales', 'url' =>  'grades.index ', 'permission' => 'gradingscale.view'],
+            ['title' => 'Classrooms', 'url' => 'classrooms.index', 'roleOrPermission' => 'notRole:teacher|student,permission:classroom.view'],
+            ['title' => 'Subjects & Curricula', 'url' => 'subjects.index', 'roleOrPermission' => 'notRole:teacher|student,permission:subject.view'],
+            ['title' => 'Timetables', 'url' => 'timetables.index', 'roleOrPermission' => 'notRole:teacher|student,permission:timetable.view'],
+            ['title' => 'Examinations', 'url' => 'exams.index', 'roleOrPermission' => 'notRole:teacher|student,permission:exam.view'],
+            ['title' => 'Grading Scales', 'url' => 'grades.index', 'roleOrPermission' => 'notRole:teacher|student,permission:gradingscale.view'],
         ],
     ],
 
-    [
-        'title' => 'Exam Management',
-        'url' => '/dashboard/exam_marks',
-        'icon' => 'FileText',
-        'isActive' => false,
-        'permission' => 'exam.manage-results',
-        'items' => [
-            ['title' => 'Enter Marks', 'url' =>  'exam_marks.create ', 'permission' => 'exam.manage-results'],
-            ['title' => 'View Marks', 'url' =>  'exam_marks.index ', 'permission' => 'exam.view'],
-        ],
-    ],
 
     [
         'title' => 'Students',
         'url' => '/dashboard/students',
         'icon' => 'Users',
         'isActive' => false,
-        'permission' => 'student.view',
+        'roleOrPermission' => 'notRole:teacher|student,permission:student.view',
         'items' => [
-            ['title' => 'Student Directory', 'url' =>  'students.index ', 'permission' => 'student.view'],
-            ['title' => 'Admissions', 'url' =>  'admissions.create ', 'permission' => 'student.create'],
-            ['title' => 'Overall Attendance', 'url' =>  'attendances.index ', 'permission' => 'attendance.view'],
-            ['title' => 'Performance Logs', 'url' =>  'performance.index ', 'permission' => 'exam.manage-results'],
+            ['title' => 'Student Directory', 'url' => 'students.index', 'roleOrPermission' => 'notRole:teacher|student,permission:student.view'],
+            ['title' => 'Admissions', 'url' => 'admissions.create', 'roleOrPermission' => 'notRole:teacher|student,permission:student.create'],
+            ['title' => 'Overall Attendance', 'url' => 'attendances.index', 'roleOrPermission' => 'notRole:teacher|student,permission:attendance.view'],
+            ['title' => 'Performance Logs', 'url' => 'performance.index', 'roleOrPermission' => 'notRole:teacher|student,permission:exam.manage-results'],
         ],
     ],
 
@@ -121,11 +112,11 @@ return [
         'url' => '/dashboard/staff',
         'icon' => 'UserCheck',
         'isActive' => false,
-        'permission' => 'staff.manage',
+        'roleOrPermission' => 'notRole:teacher|student,permission:staff.manage',
         'items' => [
-            ['title' => 'Teacher Directory', 'url' =>  'teachers.index ', 'permission' => 'teacher.view'],
-            ['title' => 'Non-Academic Staff', 'url' =>  'staffs.others ', 'permission' => 'staff.manage'],
-            ['title' => 'Payroll & Leave Admin', 'url' =>  'payroll.index ', 'permission' => 'payroll.view'],
+            ['title' => 'Teacher Directory', 'url' => 'teachers.index', 'roleOrPermission' => 'notRole:teacher|student,permission:teacher.view'],
+            ['title' => 'Non-Academic Staff', 'url' => 'staffs.others', 'roleOrPermission' => 'notRole:teacher|student,permission:staff.manage'],
+            ['title' => 'Payroll & Leave Admin', 'url' => 'payroll.index', 'roleOrPermission' => 'notRole:teacher|student,permission:payroll.view'],
         ],
     ],
 
@@ -134,21 +125,21 @@ return [
         'url' => '/dashboard/finance',
         'icon' => 'Wallet',
         'isActive' => false,
-        'permission' => 'fee.view',
+        'roleOrPermission' => 'notRole:teacher|student,permission:fee.view',
         'items' => [
-            ['title' => 'Fee Management', 'url' =>  'fees.index ', 'permission' => 'fee.view'],
-            ['title' => 'Payments', 'url' =>  'payments.index ', 'permission' => 'payment.view'],
-            ['title' => 'Expenses', 'url' =>  'expenses.index ', 'permission' => 'expense.view'],
-            ['title' => 'Reports', 'url' =>  'reports.index ', 'permission' => 'reports.view'],
+            ['title' => 'Fee Management', 'url' => 'fees.index', 'roleOrPermission' => 'notRole:teacher|student,permission:fee.view'],
+            ['title' => 'Payments', 'url' => 'payments.index', 'roleOrPermission' => 'notRole:teacher|student,permission:payment.view'],
+            ['title' => 'Expenses', 'url' => 'expenses.index', 'roleOrPermission' => 'notRole:teacher|student,permission:expense.view'],
+            ['title' => 'Reports', 'url' => 'reports.index', 'roleOrPermission' => 'notRole:teacher|student,permission:reports.view'],
         ],
     ],
 
     [
         'title' => 'School Events',
-        'url' =>  'events.index ',
+        'url' => 'events.index',
         'icon' => 'Calendar',
         'isActive' => false,
-        'permission' => 'event.view',
+        'roleOrPermission' => 'permission:event.view', // Intentionally left open to anyone with the permission
     ],
 
     [
@@ -156,19 +147,19 @@ return [
         'url' => '/dashboard/admin',
         'icon' => 'ShieldCheck',
         'isActive' => false,
-        // 'permission' => 'setting.view', // Gatekeeper for the admin section
+        'roleOrPermission' => 'notRole:teacher|student', // Purely role-based
         'items' => [
-            ['title' => 'Roles & Permissions', 'url' =>  'roles.index '],
-            ['title' => 'System Logs', 'url' =>  'system-logs.index ', 'permission' => 'log.view'],
-            ['title' => 'School Profile', 'url' =>  'school-profile.index ', 'permission' => 'setting.manage'],
+            ['title' => 'Roles & Permissions', 'url' => 'roles.index', 'roleOrPermission' => 'notRole:teacher|student'],
+            ['title' => 'System Logs', 'url' => 'system-logs.index', 'roleOrPermission' => 'notRole:teacher|student,permission:system-log.view'],
+            ['title' => 'School Profile', 'url' => 'school-profile.index', 'roleOrPermission' => 'notRole:teacher|student,permission:setting.manage'],
         ],
     ],
 
     [
         'title' => 'Settings',
-        'url' =>  'settings.index ',
+        'url' => 'settings.index',
         'icon' => 'Settings',
         'isActive' => false,
-        'permission' => 'setting.view',
+        'roleOrPermission' => 'permission:setting.view',
     ],
 ];
