@@ -74,22 +74,15 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
-import { adminNavItems, staffNavItems } from './nav-items';
+import { NavGroup } from '@/types';
 
 export function AppSidebar() {
     // Get current URL from Inertia to handle active states
     const {
         url,
-        props: { auth },
-    } = usePage();
-    const user = auth?.user as any;
-
-    const isStaff = user?.role.name === 'teacher' || user?.role.name === 'staff';
-    const isAdmin = user?.role.name === 'admin' || user?.role.name === 'super_admin';
-    const isStudent = user?.role.name === 'student';
-
-    // Select the correct array
-    const navItems = isStaff ? staffNavItems : ( isAdmin ? adminNavItems : []);
+        props: { auth, sidebar: sidebarNavItems, ...rest },
+    } = usePage(); // Gets the current reactive URL from Inertia
+    // const { canAccess } = usePermission();
 
     return (
         <Sidebar variant="inset">
@@ -118,14 +111,16 @@ export function AppSidebar() {
                     <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {navItems.map((item) => (
+                            {(sidebarNavItems as NavGroup[]).map((item) => (
                                 <SidebarMenuItem key={item.title}>
                                     {item.items ? (
                                         /* Collapsible Menu Item for categories with sub-items */
                                         <Collapsible defaultOpen={item.isActive} className="group/collapsible">
                                             <CollapsibleTrigger asChild>
                                                 <SidebarMenuButton tooltip={item.title}>
-                                                    <item.icon className="size-4" />
+                                                    {/* <item.icon className="size-4" /> */}
+                                                    {/* <Icon  /> */}
+                                                    <div className="icon-a-arrow-down"></div>
                                                     <span>{item.title}</span>
                                                     <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                                                 </SidebarMenuButton>
@@ -140,7 +135,7 @@ export function AppSidebar() {
                                                                     url === subItem.url || subItem.url.includes(url) || url.includes(subItem.url)
                                                                 }
                                                             >
-                                                                <Link href={subItem.url}>{subItem.title}</Link>
+                                                                <Link href={item.url.includes("/") ?item.url:route(item.url)}>{subItem.title}</Link>
                                                             </SidebarMenuSubButton>
                                                         </SidebarMenuSubItem>
                                                     ))}
@@ -150,8 +145,10 @@ export function AppSidebar() {
                                     ) : (
                                         /* Standard Menu Item without sub-items */
                                         <SidebarMenuButton asChild isActive={item.isActive} tooltip={item.title}>
-                                            <Link href={item.url}>
-                                                <item.icon className="size-4" />
+                                            <Link href={item.url.includes('/') ? item.url : route(item.url)}>
+                                                {/* <item.icon className="size-4" /> */}
+                                                <div data-lucide="menu"></div>
+
                                                 <span>{item.title}</span>
                                             </Link>
                                         </SidebarMenuButton>

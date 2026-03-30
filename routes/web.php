@@ -9,6 +9,7 @@ use App\Http\Controllers\ExamMarkController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FeeController;
 use App\Http\Controllers\GradingScaleController;
+use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\PerformanceLogController;
@@ -81,6 +82,10 @@ Route::get('/', function () {
 })->name('welcome');
 
 Route::middleware(['auth'])->group(function () {
+    // Navigation API endpoints
+    Route::get('/api/navigation/main', [NavigationController::class, 'getMainNav'])->name('api.navigation.main');
+    Route::get('/api/navigation/settings', [NavigationController::class, 'getSettingsNav'])->name('api.navigation.settings');
+
     Route::prefix("dashboard")->group( function(){
         Route::get("/", [DashboardController::class, "index"])->name("dashboard");
 

@@ -1,94 +1,36 @@
 import { usePage } from '@inertiajs/react';
-import { SharedData } from '@/types';
 
-/**
- * Hook to check if user has a specific permission
- *
- * Usage:
- * const canDelete = usePermission('user.delete');
- * if (canDelete) { // show delete button }
- */
-export function usePermission(permission: string | string[]): boolean {
-    const { auth } = usePage<SharedData>().props;
+export function usePermission() {
+    // Extract auth from Inertia's shared props
+    const { auth } = usePage<any>().props;
+    
+    const userPermissions: string[] = auth.permissions || [];
+    const userRole: string = auth.role || '';
 
-    // No user
-    if (!auth?.user) {
-        return false;
-    }
+    // Check if user has a specific permission
+    const hasPermission = (permission: string) => {
+        console.log({ permission, userPermissions })
+        return userPermissions.includes(permission);
+    };
+    
+    // Check if user has ANY of the given permissions in an array
+    const hasAnyPermission = (permissions: string[]) => {
+        return permissions.some(permission => {
+            // console.log({ permission, userPermissions })
+            return userPermissions.includes(permission)
+        });
+    };
 
-    // Admin has all permissions
-    if (auth.user.role?.slug === 'admin') {
-        return true;
-    }
+    // Optional: Check by role (Admin usually bypasses everything)
+    const hasRole = (role: string) => userRole === role;
+    const isAdmin = userRole === 'admin' || userRole === 'super_admin';
 
-    const userPermissions = auth.permissions || [];
+    // A smart check: If they are admin, they can see it. Otherwise, check exact permission.
+    const canAccess = (permission?: string) => {
+        if (!permission) return true; // If no permission is required, everyone sees it
+        if (isAdmin) return true;     // Admins see everything
+        return hasPermission(permission);
+    };
 
-    // Check if user has permission(s)
-    if (Array.isArray(permission)) {
-        return permission.some((p) => userPermissions.includes(p)); // Has ANY
-    }
-
-    return userPermissions.includes(permission); // Has specific permission
+    return { hasPermission, hasAnyPermission, hasRole, isAdmin, canAccess };
 }
-
-/**
- * Hook to check if user has ALL given permissions
- *
- * Usage:
- * const canManage = useAllPermissions(['user.view', 'user.create', 'user.edit']);
- */
-export function useAllPermissions(permissions: string[]): boolean {
-    const { auth } = usePage<SharedData>().props;
-
-    if (!auth?.user) {
-        return false;
-    }
-
-    if (auth.user.role?.slug === 'admin') {
-        return true;
-    }
-
-    const userPermissions = auth.permissions || [];
-    return permissions.every((p) => userPermissions.includes(p));
-}
-
-/**
- * Hook to check if user is a specific role
- *
- * Usage:
- * const isTeacher = useRole('teacher');
- */
-export function useRole(roleSlug: string): boolean {
-    const { auth } = usePage<SharedData>().props;
-    return auth?.user?.role?.slug === roleSlug;
-}
-
-/**
- * Hook to check if user is admin
- *
- * Usage:
- * const isAdmin = useIsAdmin();
- */
-export function useIsAdmin(): boolean {
-    const { auth } = usePage<SharedData>().props;
-    return auth?.user?.role?.slug === 'admin';
-}
-
-/**
- * Hook to check if user is any of the given roles
- *
- * Usage:
- * const canManageContent = useAnyRole(['admin', 'staff']);
- */
-export function useAnyRole(roleSlugs: string[]): boolean {
-    const { auth } = usePage<SharedData>().props;
-    return roleSlugs.includes(auth?.user?.role?.slug || '');
-}
-
-export default {
-    usePermission,
-    useAllPermissions,
-    useRole,
-    useIsAdmin,
-    useAnyRole,
-};

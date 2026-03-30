@@ -287,6 +287,8 @@ export interface BreadcrumbItem {
 export interface NavGroup {
     title: string;
     items: NavItem[];
+    permission:string;
+    url:string;
 }
 
 export interface NavItem {
@@ -294,6 +296,7 @@ export interface NavItem {
     url: string;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    permission:string
 }
 
 export interface SharedData {
