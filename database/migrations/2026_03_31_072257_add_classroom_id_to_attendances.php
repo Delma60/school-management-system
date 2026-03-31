@@ -12,16 +12,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // First, add the column as nullable if it doesn't exist
+        // Check if classroom_id column exists
         if (!Schema::hasColumn('attendances', 'classroom_id')) {
+            // Add the column with foreign key constraint
             Schema::table('attendances', function (Blueprint $table) {
                 $table->foreignId('classroom_id')->nullable()->constrained('classrooms')->onDelete('cascade');
             });
         } else {
-            // If the column exists, clean up invalid references first
+            // If the column exists, modify it to be nullable with correct type
+            // Use unsignedBigInteger to match foreignId type
+            DB::statement('ALTER TABLE attendances MODIFY COLUMN classroom_id BIGINT UNSIGNED NULL');
+
+            // Clean up invalid references
             DB::statement('UPDATE attendances SET classroom_id = NULL WHERE classroom_id IS NOT NULL AND classroom_id NOT IN (SELECT id FROM classrooms)');
 
-            // Then add the constraint
+            // Add the foreign key constraint
             Schema::table('attendances', function (Blueprint $table) {
                 $table->foreign('classroom_id')->references('id')->on('classrooms')->onDelete('cascade');
             });

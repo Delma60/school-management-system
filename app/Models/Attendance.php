@@ -12,7 +12,8 @@ class Attendance extends Model
         'user_id',
         'date',
         'status',
-        'remarks'
+        'remarks',
+        'classroom_id'
     ];
 
     /**

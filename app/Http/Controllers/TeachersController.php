@@ -186,4 +186,20 @@ class TeachersController extends Controller
             'classrooms' => $classrooms
         ]);
     }
+
+
+    public function timetable(\Illuminate\Http\Request $request)
+    {
+        // Assuming the logged-in user is the teacher
+        $teacherId = $request->user()->id;
+
+        $schedule = Timetable::where('teacher_id', $teacherId)
+            ->where('entry_type', 'class')
+            ->with(['subject', 'classroom']) // We don't need 'teacher' or 'timebreak' here
+            ->get();
+
+        return inertia('teacher/timetable', [
+            'schedule' => $schedule
+        ]);
+    }
 }

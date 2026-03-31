@@ -82,6 +82,7 @@ class AttendanceController extends Controller
                     ],
                     [
                         'status' => $status,
+                        'classroom_id' => $validated['classroom_id'],
                         // Remarks can be added here if included in the UI
                     ]
                 );

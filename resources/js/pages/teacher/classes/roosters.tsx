@@ -1,8 +1,16 @@
+import { TakeAttendanceSheet } from '@/components/attendance-sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Card } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +26,9 @@ interface Props {
 
 export default function TeacherRosters({ classrooms }: Props) {
     const [search, setSearch] = useState('');
+    // 2. ADD STATE FOR THE SHEET
+    const [isAttendanceSheetOpen, setIsAttendanceSheetOpen] = useState(false);
+    const [attendanceClassroom, setAttendanceClassroom] = useState<Classroom | null>(null);
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Teacher Dashboard', href: '/dashboard' },
@@ -29,7 +40,6 @@ export default function TeacherRosters({ classrooms }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            {JSON.stringify(classrooms)}
             <div className="space-y-6 p-6">
                 <Head title="My Class Rosters" />
 
@@ -48,16 +58,16 @@ export default function TeacherRosters({ classrooms }: Props) {
                             </div>
                             <h3 className="text-lg font-semibold tracking-tight">No Classes Assigned</h3>
                             <p className="text-muted-foreground mt-2 max-w-sm text-sm">
-                                You are not currently assigned as the primary teacher for any classes. 
-                                Contact the administration if this is a mistake.
+                                You are not currently assigned as the primary teacher for any classes. Contact the administration if this is a
+                                mistake.
                             </p>
                         </div>
                     </Card>
                 ) : (
                     <Tabs defaultValue={defaultTab} className="w-full space-y-4">
-                        <TabsList className="flex w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50">
+                        <TabsList className="bg-muted/50 flex h-auto w-full justify-start overflow-x-auto p-1">
                             {classrooms.map((cls) => (
-                                <TabsTrigger key={cls.id} value={cls.id.toString()} className="py-2 px-4">
+                                <TabsTrigger key={cls.id} value={cls.id.toString()} className="px-4 py-2">
                                     {cls.name} ({cls.students?.length || 0})
                                 </TabsTrigger>
                             ))}
@@ -66,9 +76,9 @@ export default function TeacherRosters({ classrooms }: Props) {
                         {classrooms.map((cls) => {
                             // Filter students specifically for the current mapped class
                             const filteredStudents = (cls.students || []).filter(
-                                (student) => 
-                                    student.name.toLowerCase().includes(search.toLowerCase()) || 
-                                    student.email.toLowerCase().includes(search.toLowerCase())
+                                (student) =>
+                                    student.name.toLowerCase().includes(search.toLowerCase()) ||
+                                    student.email.toLowerCase().includes(search.toLowerCase()),
                             );
 
                             return (
@@ -85,7 +95,13 @@ export default function TeacherRosters({ classrooms }: Props) {
                                                     onChange={(e) => setSearch(e.target.value)}
                                                 />
                                             </div>
-                                            <Button className="w-full gap-2 sm:w-auto">
+                                            <Button 
+                                                className="w-full gap-2 sm:w-auto"
+                                                onClick={() => {
+                                                    setAttendanceClassroom(cls);
+                                                    setIsAttendanceSheetOpen(true);
+                                                }}
+                                            >
                                                 <ClipboardList className="h-4 w-4" /> Take Attendance
                                             </Button>
                                         </div>
@@ -126,7 +142,10 @@ export default function TeacherRosters({ classrooms }: Props) {
                                                                     </div>
                                                                 </TableCell>
                                                                 <TableCell>
-                                                                    <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-100">
+                                                                    <Badge
+                                                                        variant="secondary"
+                                                                        className="bg-green-100 text-green-800 hover:bg-green-100"
+                                                                    >
                                                                         Enrolled
                                                                     </Badge>
                                                                 </TableCell>
@@ -139,7 +158,9 @@ export default function TeacherRosters({ classrooms }: Props) {
                                                                         </DropdownMenuTrigger>
                                                                         <DropdownMenuContent align="end" className="w-48">
                                                                             <DropdownMenuLabel>Student Actions</DropdownMenuLabel>
-                                                                            <DropdownMenuItem onClick={() => router.get(route('students.show', student.id))}>
+                                                                            <DropdownMenuItem
+                                                                                onClick={() => router.get(route('students.show', student.id))}
+                                                                            >
                                                                                 <UserCheck className="mr-2 h-4 w-4" /> View Profile
                                                                             </DropdownMenuItem>
                                                                             <DropdownMenuSeparator />
@@ -164,7 +185,7 @@ export default function TeacherRosters({ classrooms }: Props) {
                                                 </TableBody>
                                             </Table>
                                         ) : (
-                                            <div className="flex min-h-[200px] flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                                            <div className="text-muted-foreground flex min-h-[200px] flex-col items-center justify-center p-8 text-center">
                                                 <Users className="mb-4 h-8 w-8 opacity-20" />
                                                 <p>No students are currently enrolled in {cls.name}.</p>
                                             </div>
@@ -176,6 +197,7 @@ export default function TeacherRosters({ classrooms }: Props) {
                     </Tabs>
                 )}
             </div>
+            <TakeAttendanceSheet open={isAttendanceSheetOpen} onOpenChange={setIsAttendanceSheetOpen} classroom={attendanceClassroom} />
         </AppLayout>
     );
 }

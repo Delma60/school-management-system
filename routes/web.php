@@ -1,6 +1,8 @@
 
 <?php
 
+use App\Http\Controllers\AiLessonPlanController;
+use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DashboardController;
@@ -9,6 +11,7 @@ use App\Http\Controllers\ExamMarkController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FeeController;
 use App\Http\Controllers\GradingScaleController;
+use App\Http\Controllers\LessonPlanController;
 use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PayrollController;
@@ -155,6 +158,11 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('classes')->name("classes.")->group(function(){
             Route::get("/rosters", [TeachersController::class, 'roosters'])->name("roosters");
         });
+        Route::resource('assignments', AssignmentController::class);
+        Route::resource('lesson-plans', LessonPlanController::class);
+        Route::post('/lesson-plans/ai-generate', [AiLessonPlanController::class, 'generate'])->name('lesson-plans.ai-generate');
+
+        Route::get("/timetable", [TeachersController::class, 'timetable'])->name("timetable");
     });
 });
 
