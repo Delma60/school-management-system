@@ -29,6 +29,7 @@ export default function TeacherRosters({ classrooms }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
+            {JSON.stringify(classrooms)}
             <div className="space-y-6 p-6">
                 <Head title="My Class Rosters" />
 

@@ -1,3 +1,4 @@
+import { AddMultipleStudentsSheet } from '@/components/add-student-to-class';
 import { AssignTeacherModal } from '@/components/assign-teachers-to-classroom-modal';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -15,11 +16,20 @@ import { ArrowLeft, Edit2, GraduationCap, Mail, MoreHorizontal, Search, UserPlus
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-export default function ClassroomShow({ classroom, teachers }: { classroom: Classroom; teachers: Teacher[] }) {
+export default function ClassroomShow({
+    classroom,
+    teachers,
+    availableStudents,
+}: {
+    classroom: Classroom;
+    teachers: Teacher[];
+    availableStudents: Student[];
+}) {
     const [search, setSearch] = useState('');
     const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
     const [studentToRemove, setStudentToRemove] = useState<Student | null>(null);
     const [isAssignTeacherOpen, setIsAssignTeacherOpen] = useState(false);
+    const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
 
     const occupancy = ((classroom?.students?.length || 0) / classroom.capacity) * 100;
 
@@ -133,7 +143,7 @@ export default function ClassroomShow({ classroom, teachers }: { classroom: Clas
                                 <span className="text-3xl font-bold">{classroom.students_count || 0}</span>
                                 <span className="text-muted-foreground mb-1">/ {classroom.capacity} Students</span>
                             </div>
-                            <Progress value={occupancy} className={`h-2 ${occupancy > 90 ? 'bg-destructive/20' : ''} border border-primary`} />
+                            <Progress value={occupancy} className={`h-2 ${occupancy > 90 ? 'bg-destructive/20' : ''} border-primary border`} />
                             <p className="text-muted-foreground text-right text-xs">{Math.round(occupancy)}% Full</p>
                         </CardContent>
                     </Card>
@@ -152,12 +162,12 @@ export default function ClassroomShow({ classroom, teachers }: { classroom: Clas
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
-                        <Button className="w-full gap-2 sm:w-auto">
+                        <Button className="w-full gap-2 sm:w-auto" onClick={() => setIsAddStudentOpen(true)}>
                             <UserPlus className="h-4 w-4" /> Add Student to Class
                         </Button>
                     </div>
 
-                    {classroom.students.length > 0 ? (
+                    {classroom?.students?.length > 0 ? (
                         <Table>
                             <TableHeader className="bg-muted/50">
                                 <TableRow>
@@ -168,8 +178,8 @@ export default function ClassroomShow({ classroom, teachers }: { classroom: Clas
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredStudents.length > 0 ? (
-                                    filteredStudents.map((student) => (
+                                {filteredStudents?.length > 0 ? (
+                                    filteredStudents?.map((student) => (
                                         <TableRow key={student.id}>
                                             <TableCell className="font-medium">
                                                 <div className="flex items-center gap-3">
@@ -261,6 +271,12 @@ export default function ClassroomShow({ classroom, teachers }: { classroom: Clas
                     </DialogContent>
                 </Dialog>
             </div>
+            <AddMultipleStudentsSheet
+                open={isAddStudentOpen}
+                onOpenChange={setIsAddStudentOpen}
+                classroom={classroom}
+                availableStudents={availableStudents}
+            />
             <AssignTeacherModal open={isAssignTeacherOpen} onOpenChange={setIsAssignTeacherOpen} classroom={classroom} teachers={teachers} />
         </AppLayout>
     );

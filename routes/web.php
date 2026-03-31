@@ -96,6 +96,7 @@ Route::middleware(['auth'])->group(function () {
             Route::resource("timetables", TimetableController::class);
             Route::resource("exams", ExaminationController::class)->parameters(['exam' => 'exam:id']);
             Route::resource("grades", GradingScaleController::class);
+            Route::post("/classrooms/{classroom}/students/attach", [ClassroomController::class, 'attachStudents'])->name("classrooms.students.attach");
         });
         Route::resource("exam_marks", ExamMarkController::class);
         Route::get('/exam-marks/subjects-by-exam', [ExamMarkController::class, 'getSubjectsByExam'])->name('exam_marks.subjects_by_exam');

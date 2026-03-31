@@ -26,6 +26,7 @@ class UpdateClassroomRequest extends FormRequest
             'name' => 'nullable|string|max:100',
             'grade_level' => 'nullable|string',
             'room_number' => 'nullable|string',
+            'classroom_id' => 'nullable|exists:classrooms,id',
             'capacity' => 'nullable|integer|min:1',
             'teacher_id' => 'nullable|exists:users,id',
         ];

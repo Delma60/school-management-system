@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Classroom;
 use App\Models\Role;
 use App\Models\Subject;
 use App\Models\Teacher;
@@ -169,19 +170,20 @@ class TeachersController extends Controller
     }
 
     public function roosters(Request $request)
-{
-    // Assuming the teacher's user ID is mapped to teacher_id on the Classroom model
-    $teacherId = $request->user()->id;
+    {
+        // Assuming the teacher's user ID is mapped to teacher_id on the Classroom model
+        $teacherId = $request->user()->id;
 
-    $classrooms = \App\Models\Classroom::with(['students' => function($query) {
-        // Select what you need to keep the payload light
-        $query->select('users.id', 'name', 'email', 'meta'); 
-    }])
-    ->where('teacher_id', $teacherId)
-    ->get();
+        $classrooms = Classroom::with(['students' => function($query) {
+            // Select what you need to keep the payload light
+            // IMPORTANT: Must include 'classroom_id' (the foreign key) for the relationship to work
+            $query->select('id', 'name', 'email', 'meta', 'classroom_id'); 
+        }])
+        ->where('teacher_id', $teacherId)
+        ->get();
 
-    return inertia('teacher/classes/roosters', [
-        'classrooms' => $classrooms
-    ]);
-}
+        return inertia('teacher/classes/roosters', [
+            'classrooms' => $classrooms
+        ]);
+    }
 }

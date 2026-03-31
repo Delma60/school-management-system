@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Classroom;
 use App\Http\Requests\StoreClassroomRequest;
 use App\Http\Requests\UpdateClassroomRequest;
+use App\Models\Student;
 use App\Models\Teacher;
 use App\Services\ViewResolver;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 
@@ -66,9 +67,15 @@ class ClassroomController extends Controller
             $teachers = Teacher::select('id', 'name', 'email')->get();
             // Or if you have a specific Teacher model: \App\Models\Teacher::all();
 
+            $availableStudents = Student::whereNull('classroom_id')
+            ->orWhere('classroom_id', '!=', $classroom->id)
+            ->select('id', 'name', 'email')
+            ->get();
+
             return inertia('admin/classroom/show', [
                 'classroom' => $classroom,
-                'teachers' => $teachers, // Pass the teachers to the frontend
+                'teachers' => $teachers,
+                'availableStudents' => $availableStudents,
             ]);
         }
 
@@ -104,6 +111,18 @@ class ClassroomController extends Controller
         //
     }
 
+    public function attachStudents(Request $request, Classroom $classroom)
+    {
+        $request->validate([
+            'student_ids' => 'required|array',
+            'student_ids.*' => 'exists:users,id', // Validates against the users table
+        ]);
 
+        // Bulk update all selected students to belong to this classroom
+        \App\Models\Student::whereIn('id', $request->student_ids)
+            ->update(['classroom_id' => $classroom->id]);
+
+        return redirect()->back()->with('success', count($request->student_ids) . ' students successfully added to the class.');
+    }
 
 }
