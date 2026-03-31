@@ -17,40 +17,47 @@ class AttendanceController extends Controller
      */
     public function index(Request $request)
     {
-        $authType = Auth::user()->role->name ?? "admin";
+        $user = Auth::user();
+        $props = [];
+        $override = "admin";
 
-        $classroomId = $request->input('classroom_id', Classroom::first()->id);
-        $date = $request->input('date', now()->format('Y-m-d'));
+        $props['filters']['classroomId'] = $request->input('classroom_id', Classroom::first()->id);
+        $props['filters']['date'] = $request->input('date', now()->format('Y-m-d'));
+        $props['selectedClassroom'] =Classroom::find($props['filters']['classroomId']);
 
-        $students = Student::where('classroom_id', $classroomId)
-        ->with(['attendances' => function($query) use ($date) {
-            $query->where('date', $date);
+        $props['students'] = Student::where('classroom_id', $props['filters']['classroomId'])
+        ->with(['attendances' => function($query) use ($props) {
+            $query->where('date', $props['filters']['date']);
         }])
         ->get();
 
-        $total = $students->count();
-        $present = $students->filter(fn($s) => $s->attendances->first()?->status === 'present')->count();
-        $absent = $students->filter(fn($s) => $s->attendances->first()?->status === 'absent')->count();
-        $late = $students->filter(fn($s) => $s->attendances->first()?->status === 'late')->count();
-        
-        $percentage = $total > 0 ? round(($present / $total) * 100) : 0;
+        $props['stats']['total'] = $props['students']->count();
+        $props['stats']['present'] = $props['students']->filter(fn($s) => $s->attendances->first()?->status === 'present')->count();
+        $props['stats']['absent'] = $props['students']->filter(fn($s) => $s->attendances->first()?->status === 'absent')->count();
+        $props['stats']['late'] = $props['students']->filter(fn($s) => $s->attendances->first()?->status === 'late')->count();
 
-        return inertia(ViewResolver::resolve("attendances/index", "admin"), [
-            'classrooms' => Classroom::all(),
-            'selectedClassroom' => Classroom::find($classroomId),
-            'students' => $students,
-            'stats' => [
-                'total' => $total,
-                'present' => $present,
-                'absent' => $absent,
-                'late' => $late,
-                'percentage' => $percentage,
-            ],
-            'filters' => [
-                'classroom_id' => $classroomId,
-                'date' => $date,
-            ]
-        ]);
+        $props['stats']['percentage'] = $props['stats']['total'] > 0 ? round(($props['stats']['present'] / $props['stats']['total']) * 100) : 0;
+
+
+        if ($user->hasRole('teacher')) {
+            $override = "teacher";
+
+
+            // 1. Fetch classrooms assigned to this teacher
+            $props['classrooms'] = Classroom::where('teacher_id', $user->id)
+                ->with(['students' => function ($query) use ($props) {
+                    $query->select('users.id', 'name', 'email', 'meta', 'classroom_id')
+                          // 2. Eager load the specific attendance record for this date
+                          ->with(['attendance' => function ($attendanceQuery) use ($props) {
+                              $attendanceQuery->whereDate('date', $props['filters']['date'])
+                                              ->select('id', 'student_id', 'status', 'remarks');
+                          }]);
+                }])
+                ->get();
+
+        }
+
+        return inertia(ViewResolver::resolve("attendances/index", $override), $props);
     }
 
     /**
@@ -70,7 +77,7 @@ class AttendanceController extends Controller
             'date' => 'required|date',
             'classroom_id' => 'required|exists:classrooms,id',
             // 'data' should be an object: { "student_id": "status" }
-            'data' => 'required|array', 
+            'data' => 'required|array',
         ]);
 
         DB::transaction(function () use ($validated) {

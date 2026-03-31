@@ -159,6 +159,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get("/rosters", [TeachersController::class, 'roosters'])->name("roosters");
         });
         Route::resource('assignments', AssignmentController::class);
+        Route::get('/assignments/{assignment}/grade', [AssignmentController::class, 'grade'])->name('assignments.grade');
+Route::post('/assignments/{assignment}/grade', [AssignmentController::class, 'storeGrade'])->name('assignments.grade.store');
+
         Route::resource('lesson-plans', LessonPlanController::class);
         Route::post('/lesson-plans/ai-generate', [AiLessonPlanController::class, 'generate'])->name('lesson-plans.ai-generate');
 

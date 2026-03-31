@@ -12,7 +12,7 @@ class UpdateAssignmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,6 +24,12 @@ class UpdateAssignmentRequest extends FormRequest
     {
         return [
             //
+            'title'        => 'required|string|max:255',
+            'due_date'     => 'required|date', // Removed 'after_or_equal' for edits
+            'max_points'   => 'required|integer|min:0',
+            'subject_id'   => 'required|exists:subjects,id',
+            'classroom_id' => 'required|exists:classrooms,id',
+            'description'  => 'required|string',
         ];
     }
 }

@@ -38,8 +38,6 @@ class DashboardController extends Controller
         } elseif ($role === 'student') {
             $props['student'] = $this->getStudentStats($user);
         }
-
-        Log::info($props);
         return inertia('dashboard', $props);
     }
 

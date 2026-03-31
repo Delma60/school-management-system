@@ -35,6 +35,8 @@ class ViewResolver
 
         // 2. Determine intended folder from map
         $targetFolder = $self->map[$roleSlug] ?? $self->fallback;
+        error_log($overrideRole);
+        error_log($targetFolder);
         $fullPath = "{$targetFolder}/{$viewName}";
 
         // 3. Return target if it exists

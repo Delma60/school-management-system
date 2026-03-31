@@ -19,7 +19,7 @@ return [
         'principal' => 'admin',
         'owner' => 'admin',
         'staff' => 'staff',
-        'teacher' => 'staff',
+        'teacher' => 'teacher',
         'student' => 'student',
     ],
 

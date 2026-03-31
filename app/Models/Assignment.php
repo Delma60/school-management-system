@@ -25,10 +25,10 @@ class Assignment extends Model
     }
 
     public function subject() {
-        return $this->belongTo(Subject::class, 'subject_id');
+        return $this->belongsTo(Subject::class, 'subject_id');
     }
 
     public function classroom(){
-        return $this->belongsTO(Classroom::class, 'classroom_id');
+        return $this->belongsTo(Classroom::class, 'classroom_id');
     }
 }

@@ -12,7 +12,7 @@ class StoreAssignmentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -24,6 +24,21 @@ class StoreAssignmentRequest extends FormRequest
     {
         return [
             //
+            'title'        => 'required|string|max:255',
+            'due_date'     => 'required|date|after_or_equal:today', // Ensures due date isn't in the past
+            'max_points'   => 'required|integer|min:0',
+            'subject_id'   => 'required|exists:subjects,id',
+            'classroom_id' => 'required|exists:classrooms,id',
+            'description'  => 'required|string',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'subject_id.required' => 'Please select a subject.',
+            'classroom_id.required' => 'Please select a target classroom.',
+            'due_date.after_or_equal' => 'The due date cannot be in the past.',
         ];
     }
 }

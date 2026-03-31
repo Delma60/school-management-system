@@ -20,24 +20,43 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     {
-        $classrooms = Classroom::all();
-        $students = Student::with(['classroom', 'role'])
-            // Search filter
-            ->when($request->search, function ($query, $search) {
+        $props = [
+            "filters" => $request->search
+        ];
+        $user = $request->user();
+        $route = "students/index";
+        $override = "admin";
+        
+        $props['classrooms'] = Classroom::all();
+        $props['students'] = Student::with(['classroom', 'role'])
+        // Search filter
+        ->when($request->search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
                       ->orWhere('email', 'like', "%{$search}%");
-            })
-            // Sorting
-            ->latest()
-            // Pagination (15 per page)
-            ->paginate(15)
-            ->withQueryString();
+                      })
+                      // Sorting
+                      ->latest()
+                      // Pagination (15 per page)
+                      ->paginate(15)
+                      ->withQueryString();
+                      
+        if ($user->hasRole('teacher')) { // Adjust this check to match your auth/role setup
+            // Log::info("teacher");
+            $override = "teacher";
+            // 1. Get classrooms assigned to this specific teacher
+            $props['classrooms'] = Classroom::where('teacher_id', $user->id)->get();
+            
+            // 2. Fetch only students in those classrooms
+            $props['students'] = Student::whereIn('classroom_id', $props['classrooms']->pluck('id'))
+                ->with('classroom:id,name')
+                ->select('id', 'name', 'email', 'meta', 'classroom_id')
+                ->get();
+            
+        }
 
-        return inertia(ViewResolver::resolve("students/index", "admin"), [
-            'students' => $students,
-            'classrooms' => $classrooms,
-            'filters' => $request->only(['search'])
-        ]);
+        error_log($override);
+
+        return inertia(ViewResolver::resolve("students/index", "teacher"), $props);
     }
 
     /**
