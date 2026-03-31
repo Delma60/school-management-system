@@ -22,7 +22,7 @@ return [
         'isActive' => false,
         'roleOrPermission' => 'role:teacher,permission:classroom.view', 
         'items' => [
-            ['title' => 'Class Rosters', 'url' => '/dashboard/teacher/classes/rosters', 'roleOrPermission' => 'role:teacher,permission:classroom.view'],
+            ['title' => 'Class Rosters', 'url' => 'classes.roosters', 'roleOrPermission' => 'role:teacher,permission:classroom.view'],
             ['title' => 'My Timetable', 'url' => '/dashboard/teacher/timetable', 'roleOrPermission' => 'role:teacher,permission:timetable.view'],
             ['title' => 'Lesson Plans', 'url' => '/dashboard/teacher/lesson-plans', 'roleOrPermission' => 'role:teacher,permission:lessonplan.view'],
             ['title' => 'Assignments', 'url' => '/dashboard/teacher/assignments', 'roleOrPermission' => 'role:teacher,permission:subject.view'], 

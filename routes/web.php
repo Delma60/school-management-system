@@ -150,6 +150,10 @@ Route::middleware(['auth'])->group(function () {
             // Route::post('/fees/payment', [FeeController::class, 'storePayment'])->name('fees.payment.store');
             // Route::post('/fees/structure', [FeeController::class, 'storeStructure'])->name('fees.structure.store');
         });
+
+        Route::prefix('classes')->name("classes.")->group(function(){
+            Route::get("/rosters", [TeachersController::class, 'roosters'])->name("roosters");
+        });
     });
 });
 

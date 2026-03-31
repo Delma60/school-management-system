@@ -123,10 +123,10 @@ class DashboardController extends Controller
 
         // 2. Fetch Recent System Logs for Activity Board
         $activities = SystemLog::with('user')->latest()->take(5)->get()->map(function ($log) {
-            $initials = $log->user ? substr($log->user->first_name, 0, 1) . substr($log->user->last_name, 0, 1) : 'SYS';
+            $initials = $log->user ? substr($log->username, 0, 1) : 'SYS';
             return [
                 'id' => $log->id,
-                'user' => ['name' => $log->user->first_name ?? 'System', 'initials' => strtoupper($initials)],
+                'user' => ['name' => $log->user->name ?? 'System', 'initials' => strtoupper($initials)],
                 'type' => $log->level === 'error' ? 'security' : 'payment',
                 'description' => $log->message,
                 'timestamp' => $log->created_at->diffForHumans(),

@@ -25,9 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 return inertia('errors/error-404');
             }
 
-            // Handle 403 errors
+            // Handle 403 errors - redirect back with flash message for toast
             if ($e instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException) {
-                return inertia('errors/error-403');
+                return back()->with('error', 'You do not have permission to access this resource.');
             }
 
             // Handle 500 errors

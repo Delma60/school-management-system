@@ -16,8 +16,13 @@ class Classroom extends Model
         "name",
         "grade_level",
         "room_number",
-        "capacity"
+        "capacity",
+        "teacher_id",
     ]; 
+
+    public $appends = [
+        "students_count"
+    ];
 
     public function students(): HasMany
     {
@@ -25,14 +30,18 @@ class Classroom extends Model
         return $this->hasMany(Student::class);
     }
 
-    public function teacher():HasOne
+    public function teacher()
     {
-        return $this->hasOne(Teacher::class);
+        return $this->belongsTo(Teacher::class, 'teacher_id');
     }
 
     public function timetable(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Timetable::class);
+    }
+
+    function getStudentsCountAttribute(){
+        return $this->students->count();
     }
     
 }

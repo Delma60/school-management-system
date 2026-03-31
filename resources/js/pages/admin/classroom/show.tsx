@@ -1,3 +1,4 @@
+import { AssignTeacherModal } from '@/components/assign-teachers-to-classroom-modal';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,19 +11,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, Classroom, Student, Teacher } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, GraduationCap, Mail, MoreHorizontal, Search, UserPlus, Users } from 'lucide-react';
+import { ArrowLeft, Edit2, GraduationCap, Mail, MoreHorizontal, Search, UserPlus, Users } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-
-
-
-export default function ClassroomShow({ classroom }: { classroom: Classroom }) {
+export default function ClassroomShow({ classroom, teachers }: { classroom: Classroom; teachers: Teacher[] }) {
     const [search, setSearch] = useState('');
     const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
     const [studentToRemove, setStudentToRemove] = useState<Student | null>(null);
+    const [isAssignTeacherOpen, setIsAssignTeacherOpen] = useState(false);
 
-    const occupancy = (classroom?.students?.length / classroom.capacity) * 100;
+    const occupancy = ((classroom?.students?.length || 0) / classroom.capacity) * 100;
+
+    // Add state for the new modal
 
     // Simple client-side search filter
     const filteredStudents = classroom?.students?.filter(
@@ -103,16 +104,22 @@ export default function ClassroomShow({ classroom }: { classroom: Classroom }) {
                             <CardTitle className="text-lg">Class Overview</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="mb-4 flex items-center gap-4">
-                                <Avatar className="border-primary/20 h-12 w-12 border-2">
-                                    <AvatarFallback>
-                                        <GraduationCap className="text-primary h-6 w-6" />
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="text-muted-foreground text-sm font-medium">Class Advisor / Teacher</p>
-                                    <p className="text-lg font-semibold">{classroom.teacher?.name || 'No Teacher Assigned'}</p>
+                            <div className="mb-4 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="border-primary/20 h-12 w-12 border-2">
+                                        <AvatarFallback>
+                                            <GraduationCap className="text-primary h-6 w-6" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="text-muted-foreground text-sm font-medium">Class Advisor / Teacher</p>
+                                        <p className="text-lg font-semibold">{classroom.teacher?.name || 'No Teacher Assigned'}</p>
+                                    </div>
                                 </div>
+                                {/* NEW BUTTON TO TRIGGER MODAL */}
+                                <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsAssignTeacherOpen(true)}>
+                                    <Edit2 className="h-4 w-4" /> Change
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -123,10 +130,10 @@ export default function ClassroomShow({ classroom }: { classroom: Classroom }) {
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex items-end justify-between">
-                                <span className="text-3xl font-bold">{classroom.students_count}</span>
+                                <span className="text-3xl font-bold">{classroom.students_count || 0}</span>
                                 <span className="text-muted-foreground mb-1">/ {classroom.capacity} Students</span>
                             </div>
-                            <Progress value={occupancy} className={`h-2 ${occupancy > 90 ? 'bg-destructive/20' : ''}`} />
+                            <Progress value={occupancy} className={`h-2 ${occupancy > 90 ? 'bg-destructive/20' : ''} border border-primary`} />
                             <p className="text-muted-foreground text-right text-xs">{Math.round(occupancy)}% Full</p>
                         </CardContent>
                     </Card>
@@ -254,6 +261,7 @@ export default function ClassroomShow({ classroom }: { classroom: Classroom }) {
                     </DialogContent>
                 </Dialog>
             </div>
+            <AssignTeacherModal open={isAssignTeacherOpen} onOpenChange={setIsAssignTeacherOpen} classroom={classroom} teachers={teachers} />
         </AppLayout>
     );
 }

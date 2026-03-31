@@ -33,16 +33,16 @@ class HandleInertiaRequests extends Middleware
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
         $user = $request->user();
-        
+
         // Assuming your role relation uses 'slug' or 'name'. Adjust as needed.
-        $userRole = $user ? $user->role?->slug ?? $user->role?->name : null; 
+        $userRole = $user ? $user->role?->slug ?? $user->role?->name : null;
         $permissions = $user ? $user->role?->permissions?->pluck('slug')->toArray() ?? [] : [];
-        
+
         // Get the raw sidebar array
-        $rawSidebar = config("sidebar"); 
-        
+        $rawSidebar = config("sidebar");
+
         // Filter the sidebar based on the user's role and permissions
-        $filteredSidebar = $user ? $this->filterSidebarAccess($rawSidebar, $userRole, $permissions) : [];
+        $filteredSidebar = $user ? $this->filterSidebarAccess($rawSidebar, $userRole, $permissions, $request) : [];
 
         return array_merge(parent::share($request), [
             'name' => config('app.name'),
@@ -53,28 +53,35 @@ class HandleInertiaRequests extends Middleware
                 'role' => $userRole,
                 'permissions' => $permissions,
             ],
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+                'warning' => $request->session()->get('warning'),
+                'info' => $request->session()->get('info'),
+            ],
         ]);
     }
 
     /**
      * Recursively filters the sidebar array based on provided roles and permissions.
      */
-    private function filterSidebarAccess(array $sidebar, ?string $userRole, array $permissions): array
+    private function filterSidebarAccess(array $sidebar, ?string $userRole, array $permissions, Request $request): array
     {
         $filtered = [];
+        $currentPath = $request->path();
 
         foreach ($sidebar as $item) {
             // 1. Check parent access
-            if (!$this->userHasAccess($item, $userRole, $permissions)) {
+            if (!$this->userHasAccess($item, $userRole, $permissions, $currentPath)) {
                 continue;
             }
 
             // 2. Filter sub-items if they exist
             if (isset($item['items']) && is_array($item['items'])) {
                 $filteredChildren = [];
-                
+
                 foreach ($item['items'] as $child) {
-                    if ($this->userHasAccess($child, $userRole, $permissions)) {
+                    if ($this->userHasAccess($child, $userRole, $permissions, $currentPath)) {
                         $filteredChildren[] = $child;
                     }
                 }
@@ -96,27 +103,36 @@ class HandleInertiaRequests extends Middleware
     /**
      * Evaluates the 'roleOrPermission' string to determine access.
      * Supports multi-roles (role:a|b), multi-permissions (permission:x|y), and negations (notRole:c|d).
+     * Also dynamically sets isActive based on current URL.
      */
-    private function userHasAccess(array $item, ?string $userRole, array $permissions): bool
+    private function userHasAccess(array $item, ?string $userRole, array $permissions, string $currentPath): bool
     {
+        // 1. DYNAMICALLY SET isActive BASED ON CURRENT URL
+        if (isset($item['url'])) {
+            // Normalize both paths for comparison (remove leading slash, ensure consistency)
+            $itemPath = ltrim($item['url'], '/');
+            $isActive = ($itemPath === $currentPath || trim($currentPath, '/') === $itemPath);
+            $item['isActive'] = $isActive;
+        }
+
         if (empty($item['roleOrPermission'])) {
             return true; // No restrictions set on this item
         }
 
         $safeUserRole = strtolower((string) $userRole);
 
-        // 1. GLOBAL OVERRIDE (Optional: rename 'super_admin' to match your top role)
-        if ($safeUserRole === 'super_admin') {
+        // 2. GLOBAL OVERRIDE (super_admin, admin, owner have full access)
+        if (in_array($safeUserRole, ['super_admin'])) {
             return true;
         }
 
         $conditions = explode(',', $item['roleOrPermission']);
-        
+
         // Tracking which rules were actually requested
         $requiresRole = false;
         $requiresNotRole = false;
         $requiresPerm = false;
-        
+
         // Tracking if the user passed the requested rules
         $passedRole = false;
         $passedNotRole = true; // Defaults to true; fails if they hit a restricted role
@@ -130,7 +146,7 @@ class HandleInertiaRequests extends Middleware
                 $requiresRole = true;
                 $allowedRoles = explode('|', str_replace('role:', '', $condition));
                 $allowedRoles = array_map('strtolower', $allowedRoles);
-                
+
                 if (in_array($safeUserRole, $allowedRoles)) {
                     $passedRole = true;
                 }
@@ -141,9 +157,9 @@ class HandleInertiaRequests extends Middleware
                 $requiresNotRole = true;
                 $restrictedRoles = explode('|', str_replace('notRole:', '', $condition));
                 $restrictedRoles = array_map('strtolower', $restrictedRoles);
-                
+
                 if (in_array($safeUserRole, $restrictedRoles)) {
-                    $passedNotRole = false; 
+                    $passedNotRole = false;
                 }
             }
 
@@ -151,7 +167,7 @@ class HandleInertiaRequests extends Middleware
             if (str_starts_with($condition, 'permission:')) {
                 $requiresPerm = true;
                 $allowedPerms = explode('|', str_replace('permission:', '', $condition));
-                
+
                 if (!empty(array_intersect($allowedPerms, $permissions))) {
                     $passedPerm = true;
                 }

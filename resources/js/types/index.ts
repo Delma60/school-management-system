@@ -22,7 +22,8 @@ export interface Classroom {
     updated_at?: string;
     teacher?: Teacher;
     students?: Student[];
-    timetable?:TimetableEntry[]
+    timetable?:TimetableEntry[],
+    students_count?:number|string
 }
 
 // ==================== Finance & Fees Interfaces ====================

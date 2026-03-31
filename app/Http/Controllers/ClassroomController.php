@@ -19,8 +19,6 @@ class ClassroomController extends Controller
     public function index()
     {
         //
-        $authType = Auth::user()->role?->name ?? "admin";
-
         return inertia(ViewResolver::resolve("classroom/index", "admin"), [
                     'classrooms' => Classroom::with('teacher')
                         ->withCount('students')
@@ -53,7 +51,6 @@ class ClassroomController extends Controller
         //
         $validated = $request->validated();
         $created = Classroom::create($request->validated());
-        Log::info(["created" => $created, "all" => $request->all(), "validated" => $validated]);
         return Redirect::back()->with('success', "Classroom {$validated['name']} created successfully!");
     }
 
@@ -61,14 +58,19 @@ class ClassroomController extends Controller
      * Display the specified resource.
      */
     public function show(Classroom $classroom)
-    {
+        {
+            // Load existing relationships
+            $classroom->load(['students', 'teacher']);
 
-        $classroom->load(['students', 'teacher']);
+            // Fetch all teachers (assuming role 'teacher' or a Teacher model)
+            $teachers = Teacher::select('id', 'name', 'email')->get();
+            // Or if you have a specific Teacher model: \App\Models\Teacher::all();
 
-        // We also need the count for the UI capacity bar
-        $classroom->loadCount('students');
-        return inertia(ViewResolver::resolve("classroom/show", "admin"), compact("classroom"));
-    }
+            return inertia('admin/classroom/show', [
+                'classroom' => $classroom,
+                'teachers' => $teachers, // Pass the teachers to the frontend
+            ]);
+        }
 
     /**
      * Show the form for editing the specified resource.
@@ -88,6 +90,7 @@ class ClassroomController extends Controller
     public function update(UpdateClassroomRequest $request, Classroom $classroom)
     {
         $validated = $request->validated();
+        Log::info("Updating classroom with data: " . json_encode($validated));
         $classroom->update($validated);
         return redirect()->back()
         ->with('success', 'Classroom details updated successfully!');
@@ -100,4 +103,7 @@ class ClassroomController extends Controller
     {
         //
     }
+
+
+
 }

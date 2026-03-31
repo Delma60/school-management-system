@@ -167,4 +167,21 @@ class TeachersController extends Controller
     {
         //
     }
+
+    public function roosters(Request $request)
+{
+    // Assuming the teacher's user ID is mapped to teacher_id on the Classroom model
+    $teacherId = $request->user()->id;
+
+    $classrooms = \App\Models\Classroom::with(['students' => function($query) {
+        // Select what you need to keep the payload light
+        $query->select('users.id', 'name', 'email', 'meta'); 
+    }])
+    ->where('teacher_id', $teacherId)
+    ->get();
+
+    return inertia('teacher/classes/roosters', [
+        'classrooms' => $classrooms
+    ]);
+}
 }

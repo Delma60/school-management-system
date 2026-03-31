@@ -23,10 +23,10 @@ class UpdateClassroomRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:100',
-            'grade_level' => 'required|string',
+            'name' => 'nullable|string|max:100',
+            'grade_level' => 'nullable|string',
             'room_number' => 'nullable|string',
-            'capacity' => 'required|integer|min:1',
+            'capacity' => 'nullable|integer|min:1',
             'teacher_id' => 'nullable|exists:users,id',
         ];
     }
