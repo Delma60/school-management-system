@@ -5,7 +5,6 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 import { Toaster } from 'sonner';
 import { route as routeFn } from 'ziggy-js';
-import { FlashNotifications } from './components/flash-notifications';
 import { initializeTheme } from './hooks/use-appearance';
 
 declare global {
@@ -22,7 +21,6 @@ createInertiaApp({
 
         root.render(
             <>
-                <FlashNotifications />
                 <App {...props} />
                 <Toaster richColors closeButton position="top-right" />
             </>,

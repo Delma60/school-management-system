@@ -1,6 +1,7 @@
 import { AppContent } from '@/components/app-content';
 import { AppHeader } from '@/components/app-header';
 import { AppShell } from '@/components/app-shell';
+import { FlashNotifications } from '@/components/flash-notifications';
 import { type BreadcrumbItem } from '@/types';
 
 interface AppHeaderLayoutProps {
@@ -10,9 +11,12 @@ interface AppHeaderLayoutProps {
 
 export default function AppHeaderLayout({ children, breadcrumbs }: AppHeaderLayoutProps) {
     return (
-        <AppShell>
-            <AppHeader breadcrumbs={breadcrumbs} />
-            <AppContent>{children}</AppContent>
-        </AppShell>
+        <>
+            <FlashNotifications />
+            <AppShell>
+                <AppHeader breadcrumbs={breadcrumbs} />
+                <AppContent>{children}</AppContent>
+            </AppShell>
+        </>
     );
 }
