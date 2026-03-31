@@ -10,6 +10,7 @@ use App\Http\Controllers\ExaminationController;
 use App\Http\Controllers\ExamMarkController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FeeController;
+use App\Http\Controllers\GradebookController;
 use App\Http\Controllers\GradingScaleController;
 use App\Http\Controllers\LessonPlanController;
 use App\Http\Controllers\NavigationController;
@@ -166,6 +167,8 @@ Route::post('/assignments/{assignment}/grade', [AssignmentController::class, 'st
         Route::post('/lesson-plans/ai-generate', [AiLessonPlanController::class, 'generate'])->name('lesson-plans.ai-generate');
 
         Route::get("/timetable", [TeachersController::class, 'timetable'])->name("timetable");
+        Route::resource("grades", GradebookController::class)->names("grade-books");
+
     });
 });
 

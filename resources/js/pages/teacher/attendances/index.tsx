@@ -1,4 +1,5 @@
-import { TakeAttendanceSheet } from '@/components/take-attendance-sheet'; // Reusing your existing component!
+// import { TakeAttendanceSheet } from '@/components/take-attendance-sheet'; // Reusing your existing component!
+import { TakeAttendanceSheet } from '@/components/attendance-sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ interface Props {
     selectedDate: string;
 }
 
-export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }: Props) {
+export default function TeacherAttendanceIndex({ classrooms = [], filters }: Props) {
     const [search, setSearch] = useState('');
     const [isAttendanceSheetOpen, setIsAttendanceSheetOpen] = useState(false);
     const [activeClassroom, setActiveClassroom] = useState<Classroom | null>(null);
@@ -35,7 +36,7 @@ export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }
     };
 
     const changeDateByDays = (days: number) => {
-        const dateObj = new Date(selectedDate);
+        const dateObj = new Date(filters?.date);
         dateObj.setDate(dateObj.getDate() + days);
         handleDateChange(dateObj.toISOString().split('T')[0]);
     };
@@ -48,9 +49,7 @@ export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Attendance Log" />
-
-            <div className="mx-auto max-w-7xl space-y-6 p-6">
-                
+            <div className="space-y-6 p-6">
                 {/* Header & Date Controls */}
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
@@ -61,32 +60,38 @@ export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }
                     </div>
 
                     {/* Date Navigator */}
-                    <div className="flex items-center gap-2 bg-muted/50 p-1.5 rounded-lg border">
+                    <div className="bg-muted/50 flex items-center gap-2 rounded-lg border p-1.5">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeDateByDays(-1)}>
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
-                        <Input 
-                            type="date" 
-                            value={selectedDate}
+                        <Input
+                            type="date"
+                            value={filters?.date}
                             onChange={(e) => handleDateChange(e.target.value)}
-                            className="h-8 border-none bg-transparent shadow-none w-[140px] font-medium"
+                            className="h-8 w-[140px] border-none bg-transparent font-medium shadow-none"
                         />
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeDateByDays(1)} disabled={selectedDate === new Date().toISOString().split('T')[0]}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => changeDateByDays(1)}
+                            disabled={filters?.date === new Date().toISOString().split('T')[0]}
+                        >
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
                 </div>
 
                 {classrooms.length === 0 ? (
-                    <Card className="border-dashed shadow-sm flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
-                        <CalendarIcon className="h-12 w-12 mb-4 opacity-20" />
+                    <Card className="text-muted-foreground flex flex-col items-center justify-center border-dashed p-12 text-center shadow-sm">
+                        <CalendarIcon className="mb-4 h-12 w-12 opacity-20" />
                         <p>You are not assigned to any classrooms.</p>
                     </Card>
                 ) : (
                     <Tabs defaultValue={defaultTab} className="w-full space-y-4">
-                        <TabsList className="flex w-full justify-start overflow-x-auto h-auto p-1 bg-muted/50">
+                        <TabsList className="bg-muted/50 flex h-auto w-full justify-start overflow-x-auto p-1">
                             {classrooms.map((cls) => (
-                                <TabsTrigger key={cls.id} value={cls.id.toString()} className="py-2 px-4">
+                                <TabsTrigger key={cls.id} value={cls.id.toString()} className="px-4 py-2">
                                     {cls.name}
                                 </TabsTrigger>
                             ))}
@@ -94,34 +99,55 @@ export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }
 
                         {classrooms.map((cls) => {
                             const students = cls.students || [];
-                            const filteredStudents = students.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
-                            
+                            const filteredStudents = students.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()));
+
                             // Calculate Stats for this specific class
-                            const presentCount = students.filter(s => s.attendance?.[0]?.status === 'present').length;
-                            const absentCount = students.filter(s => s.attendance?.[0]?.status === 'absent').length;
-                            const lateCount = students.filter(s => s.attendance?.[0]?.status === 'late').length;
-                            const isRecorded = students.some(s => s.attendance && s.attendance.length > 0);
+                            const presentCount = students.filter((s) => s.attendances?.[0]?.status === 'present')?.length;
+                            const absentCount = students.filter((s) => s.attendances?.[0]?.status === 'absent')?.length;
+                            const lateCount = students.filter((s) => s.attendances?.[0]?.status === 'late')?.length;
+                            const isRecorded = students.some((s) => s.attendances && s.attendances?.length > 0);
 
                             return (
                                 <TabsContent key={cls.id} value={cls.id.toString()} className="space-y-4">
-                                    
                                     {/* Stats Row */}
-                                    <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-                                        <Card className="shadow-sm border-t-4 border-t-primary">
-                                            <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground uppercase">Total Students</CardTitle></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold">{students.length}</div></CardContent>
+                                    <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                                        <Card className="border-t-primary border-t-4 shadow-sm">
+                                            <CardHeader className="pb-2">
+                                                <CardTitle className="text-muted-foreground text-xs uppercase">Total Students</CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold">{students.length}</div>
+                                            </CardContent>
                                         </Card>
-                                        <Card className="shadow-sm border-t-4 border-t-green-500">
-                                            <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground uppercase flex items-center gap-1"><CheckCircle className="h-3 w-3"/> Present</CardTitle></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold text-green-600">{presentCount}</div></CardContent>
+                                        <Card className="border-t-4 border-t-green-500 shadow-sm">
+                                            <CardHeader className="pb-2">
+                                                <CardTitle className="text-muted-foreground flex items-center gap-1 text-xs uppercase">
+                                                    <CheckCircle className="h-3 w-3" /> Present
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold text-green-600">{presentCount}</div>
+                                            </CardContent>
                                         </Card>
-                                        <Card className="shadow-sm border-t-4 border-t-destructive">
-                                            <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground uppercase flex items-center gap-1"><XCircle className="h-3 w-3"/> Absent</CardTitle></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold text-destructive">{absentCount}</div></CardContent>
+                                        <Card className="border-t-destructive border-t-4 shadow-sm">
+                                            <CardHeader className="pb-2">
+                                                <CardTitle className="text-muted-foreground flex items-center gap-1 text-xs uppercase">
+                                                    <XCircle className="h-3 w-3" /> Absent
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-destructive text-2xl font-bold">{absentCount}</div>
+                                            </CardContent>
                                         </Card>
-                                        <Card className="shadow-sm border-t-4 border-t-amber-500">
-                                            <CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground uppercase flex items-center gap-1"><Clock className="h-3 w-3"/> Late</CardTitle></CardHeader>
-                                            <CardContent><div className="text-2xl font-bold text-amber-600">{lateCount}</div></CardContent>
+                                        <Card className="border-t-4 border-t-amber-500 shadow-sm">
+                                            <CardHeader className="pb-2">
+                                                <CardTitle className="text-muted-foreground flex items-center gap-1 text-xs uppercase">
+                                                    <Clock className="h-3 w-3" /> Late
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="text-2xl font-bold text-amber-600">{lateCount}</div>
+                                            </CardContent>
                                         </Card>
                                     </div>
 
@@ -137,10 +163,10 @@ export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }
                                                     onChange={(e) => setSearch(e.target.value)}
                                                 />
                                             </div>
-                                            
-                                            <Button 
-                                                variant={isRecorded ? "outline" : "default"} 
-                                                className="w-full sm:w-auto gap-2"
+
+                                            <Button
+                                                variant={isRecorded ? 'outline' : 'default'}
+                                                className="w-full gap-2 sm:w-auto"
                                                 onClick={() => openTakeAttendance(cls)}
                                             >
                                                 {isRecorded ? 'Edit Attendance' : 'Take Attendance Now'}
@@ -160,7 +186,9 @@ export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }
                                                 {filteredStudents.length > 0 ? (
                                                     filteredStudents.map((student) => {
                                                         // Extract the attendance record for this specific day
-                                                        const record = student.attendance?.[0];
+                                                        const record = student.attendances?.find(
+                                                            (att) => new Date(att.date).getTime() === new Date(filters.date).getTime(),
+                                                        );
 
                                                         return (
                                                             <TableRow key={student.id}>
@@ -175,20 +203,26 @@ export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }
                                                                     </div>
                                                                 </TableCell>
                                                                 <TableCell className="text-muted-foreground font-mono text-xs">
-                                                                    {student.meta?.admission_number || '--'}
+                                                                    {student?.meta?.admission_number || '--'}
                                                                 </TableCell>
                                                                 <TableCell>
                                                                     {!record ? (
-                                                                        <Badge variant="outline" className="text-muted-foreground border-dashed">Not Recorded</Badge>
+                                                                        <Badge variant="outline" className="text-muted-foreground border-dashed">
+                                                                            Not Recorded
+                                                                        </Badge>
                                                                     ) : record.status === 'present' ? (
-                                                                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Present</Badge>
+                                                                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                                                                            Present
+                                                                        </Badge>
                                                                     ) : record.status === 'absent' ? (
                                                                         <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Absent</Badge>
                                                                     ) : (
-                                                                        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Late</Badge>
+                                                                        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                                                                            Late
+                                                                        </Badge>
                                                                     )}
                                                                 </TableCell>
-                                                                <TableCell className="text-sm text-muted-foreground">
+                                                                <TableCell className="text-muted-foreground text-sm">
                                                                     {record?.remarks || '--'}
                                                                 </TableCell>
                                                             </TableRow>
@@ -196,7 +230,7 @@ export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }
                                                     })
                                                 ) : (
                                                     <TableRow>
-                                                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                                                        <TableCell colSpan={4} className="text-muted-foreground h-24 text-center">
                                                             No students found.
                                                         </TableCell>
                                                     </TableRow>
@@ -212,10 +246,11 @@ export default function TeacherAttendanceIndex({ classrooms = [], selectedDate }
             </div>
 
             {/* Mount the Sheet we built earlier! */}
-            <TakeAttendanceSheet 
+            <TakeAttendanceSheet
                 open={isAttendanceSheetOpen}
                 onOpenChange={setIsAttendanceSheetOpen}
                 classroom={activeClassroom}
+                selectedDate={filters.date}
             />
         </AppLayout>
     );

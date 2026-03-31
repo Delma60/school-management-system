@@ -38,7 +38,7 @@ return [
         'items' => [
             ['title' => 'Student Directory', 'url' => 'students.index', 'roleOrPermission' => 'role:teacher,permission:student.view'],
             ['title' => 'Mark Attendance', 'url' => 'attendances.index', 'roleOrPermission' => 'role:teacher,permission:attendance.create'],
-            ['title' => 'Examinations & Grading', 'url' => '/dashboard/teacher/grades', 'roleOrPermission' => 'role:teacher,permission:exam.manage-results'],
+            ['title' => 'Examinations & Grading', 'url' => 'grade-books.index', 'roleOrPermission' => 'role:teacher,permission:exam.manage-results'],
             ['title' => 'Behavioral Logs', 'url' => '/dashboard/teacher/students/behavior', 'roleOrPermission' => 'role:teacher,permission:student.view'], 
         ],
     ],

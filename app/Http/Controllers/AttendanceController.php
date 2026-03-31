@@ -48,9 +48,9 @@ class AttendanceController extends Controller
                 ->with(['students' => function ($query) use ($props) {
                     $query->select('users.id', 'name', 'email', 'meta', 'classroom_id')
                           // 2. Eager load the specific attendance record for this date
-                          ->with(['attendance' => function ($attendanceQuery) use ($props) {
+                          ->with(['attendances' => function ($attendanceQuery) use ($props) {
                               $attendanceQuery->whereDate('date', $props['filters']['date'])
-                                              ->select('id', 'student_id', 'status', 'remarks');
+                                              ->select('id', 'student_id', 'status', 'remarks', 'date');
                           }]);
                 }])
                 ->get();
