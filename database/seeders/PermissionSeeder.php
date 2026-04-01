@@ -655,11 +655,25 @@ class PermissionSeeder extends Seeder
 
         ];
 
+        $createdCount = 0;
+        $updatedCount = 0;
+
         foreach ($permissions as $permission) {
-            Permission::updateOrCreate(
+            $result = Permission::updateOrCreate(
                 ['slug' => $permission['slug']],
                 $permission
             );
+
+            if ($result->wasRecentlyCreated) {
+                $createdCount++;
+            } else {
+                $updatedCount++;
+            }
         }
+
+        $this->command->info("\n✅ Permissions seeded successfully!");
+        $this->command->info("   ✓ Created: {$createdCount}");
+        $this->command->info("   ✓ Updated: {$updatedCount}");
+        $this->command->info("   ✓ Total: " . count($permissions));
     }
 }
