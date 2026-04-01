@@ -35,6 +35,10 @@ class RolePermissionSeeder extends Seeder
                 'user.view',
                 'reports.view',
                 'reports.generate',
+                'leave_request.view',
+                'leave_request.create',
+                'leave_request.edit',
+                'leave_request.delete',
             ])->pluck('id')->toArray();
 
             $teacherRole->permissions()->sync($teacherPermissionIds);
@@ -50,6 +54,8 @@ class RolePermissionSeeder extends Seeder
                 'timetable.view',
                 'event.view',
                 'user.view',
+                'leave_request.view',
+                'leave_request.create',
             ])->pluck('id')->toArray();
 
             $studentRole->permissions()->sync($studentPermissionIds);
@@ -81,6 +87,9 @@ class RolePermissionSeeder extends Seeder
                 'reports.generate',
                 'reports.export',
                 'staff.manage',
+                'leave_request.view',
+                'leave_request.approve',
+                'leave_request.reject',
             ])->pluck('id')->toArray();
 
             $staffRole->permissions()->sync($staffPermissionIds);

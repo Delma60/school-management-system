@@ -615,6 +615,44 @@ class PermissionSeeder extends Seeder
                 'group' => 'Exams & Marks',
             ],
 
+            // Leave Request Management
+            [
+                'name' => 'View Leave Requests',
+                'slug' => 'leave_request.view',
+                'description' => 'Can view leave requests',
+                'group' => 'Leave Management',
+            ],
+            [
+                'name' => 'Create Leave Request',
+                'slug' => 'leave_request.create',
+                'description' => 'Can create new leave requests',
+                'group' => 'Leave Management',
+            ],
+            [
+                'name' => 'Edit Leave Request',
+                'slug' => 'leave_request.edit',
+                'description' => 'Can edit leave requests',
+                'group' => 'Leave Management',
+            ],
+            [
+                'name' => 'Delete Leave Request',
+                'slug' => 'leave_request.delete',
+                'description' => 'Can delete leave requests',
+                'group' => 'Leave Management',
+            ],
+            [
+                'name' => 'Approve Leave Request',
+                'slug' => 'leave_request.approve',
+                'description' => 'Can approve leave requests',
+                'group' => 'Leave Management',
+            ],
+            [
+                'name' => 'Reject Leave Request',
+                'slug' => 'leave_request.reject',
+                'description' => 'Can reject leave requests',
+                'group' => 'Leave Management',
+            ],
+
         ];
 
         foreach ($permissions as $permission) {

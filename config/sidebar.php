@@ -39,7 +39,7 @@ return [
             ['title' => 'Student Directory', 'url' => 'students.index', 'roleOrPermission' => 'role:teacher,permission:student.view'],
             ['title' => 'Mark Attendance', 'url' => 'attendances.index', 'roleOrPermission' => 'role:teacher,permission:attendance.create'],
             ['title' => 'Examinations & Grading', 'url' => 'grade-books.index', 'roleOrPermission' => 'role:teacher,permission:exam.manage-results'],
-            ['title' => 'Behavioral Logs', 'url' => '/dashboard/teacher/students/behavior', 'roleOrPermission' => 'role:teacher,permission:student.view'], 
+            ['title' => 'Behavioral Logs', 'url' => 'behavior-logs.index', 'roleOrPermission' => 'role:teacher,permission:student.view'], 
         ],
     ],
 
@@ -50,7 +50,7 @@ return [
         'isActive' => false,
         'roleOrPermission' => 'role:teacher,permission:leave.create', 
         'items' => [
-            ['title' => 'Leave Requests', 'url' => '/dashboard/teacher/leave', 'roleOrPermission' => 'role:teacher,permission:leave.create'],
+            ['title' => 'Leave Requests', 'url' => 'leave-requests.index', 'roleOrPermission' => 'role:teacher,permission:leave.create'],
             ['title' => 'My Payslips', 'url' => '/dashboard/teacher/payslips', 'roleOrPermission' => 'role:teacher,permission:payroll.view'],
             ['title' => 'Profile Settings', 'url' => 'profile.edit'], // Usually open to everyone
         ],

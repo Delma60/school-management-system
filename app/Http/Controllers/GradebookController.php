@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Assignment;
 use App\Models\AssignmentSubmission;
+use App\Models\Attendance;
 use App\Models\Classroom;
+use App\Models\ExamMark;
+use App\Models\ExamSubject;
 use App\Models\Student;
 use App\Models\Subject;
 use Illuminate\Http\Request;
@@ -18,55 +21,80 @@ class GradebookController extends Controller
     {
         $teacherId = $request->user()->id;
 
-        // 1. Fetch Classrooms assigned to this teacher
+        // 1. Fetch Classrooms & Subjects
         $classrooms = Classroom::where('teacher_id', $teacherId)->get(['id', 'name']);
-        
-        // 2. Fetch Subjects (assuming subjects are global or linked to the teacher)
         $subjects = Subject::where('is_active', true)->get(['id', 'name']);
 
-        // Set default filters from URL or fallback to the first available class/subject
         $classroomId = $request->query('classroom_id', $classrooms->first()?->id);
         $subjectId = $request->query('subject_id', $subjects->first()?->id);
 
-        $assignments = [];
+        $columns = [];
         $studentsData = [];
 
-        // 3. If we have a class and subject selected, build the matrix
         if ($classroomId && $subjectId) {
+            // --- A. FETCH COLUMN HEADERS ---
             
-            // Get all assignments for this class and subject
+            // 1. Assignments
             $assignments = Assignment::where('classroom_id', $classroomId)
                 ->where('subject_id', $subjectId)
-                ->where('teacher_id', $teacherId)
-                ->orderBy('due_date', 'asc')
-                ->get(['id', 'title', 'max_points', 'due_date']);
-
-            // Get students in this classroom
-            $students = Student::where('classroom_id', $classroomId)
-                ->get(['id', 'name', 'meta']);
-
-            // Get all submissions for these specific assignments
-            $assignmentIds = $assignments->pluck('id');
-            $submissions = AssignmentSubmission::whereIn('assignment_id', $assignmentIds)->get();
-
-            // Format the student data into a clean structure for the React grid
-            foreach ($students as $student) {
-                // Find all submissions belonging to this student
-                $studentSubmissions = $submissions->where('student_id', $student->id);
+                ->get();
                 
-                $submissionMap = [];
-                foreach ($studentSubmissions as $sub) {
-                    $submissionMap[$sub->assignment_id] = [
-                        'id' => $sub->id,
-                        'score' => $sub->score,
-                    ];
+            foreach ($assignments as $ass) {
+                $columns[] = ['type' => 'assignment', 'id' => $ass->id, 'title' => $ass->title, 'max' => $ass->max_points, 'readonly' => false];
+            }
+
+            // 2. Exams (Assuming ExamSubject links a Subject to an Examination)
+            $examSubjects = ExamSubject::where('subject_id', $subjectId)
+                ->with('exam') // Eager load the examination to get the name
+                ->get();
+                
+            foreach ($examSubjects as $es) {
+                $columns[] = ['type' => 'exam', 'id' => $es->id, 'title' => $es->exam->name ?? 'Exam', 'max' => 100, 'readonly' => false];
+            }
+
+            // 3. Attendance (Always exactly 1 column, Read-Only)
+            $columns[] = ['type' => 'attendance', 'id' => 'att', 'title' => 'Attendance %', 'max' => 100, 'readonly' => true];
+
+
+            // --- B. FETCH STUDENT DATA ---
+            $students = Student::where('classroom_id', $classroomId)->get(['id', 'name', 'meta']);
+            
+            // Pre-fetch all relevant grades to avoid N+1 queries
+            $assignmentSubmissions = AssignmentSubmission::whereIn('assignment_id', $assignments->pluck('id'))->get();
+            $examMarks = ExamMark::whereIn('exam_subject_id', $examSubjects->pluck('id'))->get();
+            $attendances = Attendance::where('classroom_id', $classroomId)->get();
+
+            foreach ($students as $student) {
+                $grades = [];
+
+                // Map Assignment Scores
+                foreach ($assignments as $ass) {
+                    $sub = $assignmentSubmissions->where('student_id', $student->id)->where('assignment_id', $ass->id)->first();
+                    $grades["assignment-{$ass->id}"] = $sub ? $sub->score : null;
+                }
+
+                // Map Exam Scores
+                foreach ($examSubjects as $es) {
+                    $mark = $examMarks->where('student_id', $student->id)->where('exam_subject_id', $es->id)->first();
+                    $grades["exam-{$es->id}"] = $mark ? $mark->marks_obtained : null;
+                }
+
+                // Calculate Attendance %
+                $studentAtts = $attendances->where('student_id', $student->id);
+                $totalDays = $studentAtts->count();
+                if ($totalDays > 0) {
+                    $presentDays = $studentAtts->where('status', 'present')->count();
+                    // Give half credit for late if desired, but here we strictly count 'present'
+                    $grades["attendance-att"] = round(($presentDays / $totalDays) * 100);
+                } else {
+                    $grades["attendance-att"] = 100; // Default to 100% if no attendance taken yet
                 }
 
                 $studentsData[] = [
                     'id' => $student->id,
                     'name' => $student->name,
                     'admission_number' => $student->meta['admission_number'] ?? null,
-                    'submissions' => $submissionMap, // Keyed by assignment_id
+                    'grades' => $grades, 
                 ];
             }
         }
@@ -74,14 +102,13 @@ class GradebookController extends Controller
         return inertia('teacher/grades/index', [
             'classrooms' => $classrooms,
             'subjects' => $subjects,
-            'assignments' => $assignments,
+            'columns' => $columns,
             'students' => $studentsData,
             'filters' => [
                 'classroom_id' => (string) $classroomId,
                 'subject_id' => (string) $subjectId,
             ]
-        ]);
-    }
+        ]);}
 
     /**
      * Show the form for creating a new resource.
@@ -97,34 +124,29 @@ class GradebookController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'grades' => 'required|array', // Format: ["studentId-assignmentId" => score]
-            'classroom_id' => 'required|exists:classrooms,id',
+            'grades' => 'required|array', // Format: ["type-itemId-studentId" => score]
         ]);
 
         $grades = $request->input('grades');
+        $teacherId = $request->user()->id;
 
         foreach ($grades as $key => $score) {
-            // Split the key "student_id-assignment_id"
-            [$studentId, $assignmentId] = explode('-', $key);
+            // Key comes from frontend as: "assignment-12-5" (type-itemId-studentId)
+            [$type, $itemId, $studentId] = explode('-', $key);
 
-            // Verify the assignment belongs to this teacher to prevent tampering
-            $assignment = Assignment::where('id', $assignmentId)
-                ->where('teacher_id', $request->user()->id)
-                ->first();
-
-            if ($assignment) {
-                // Update or create the submission record
+            if ($type === 'assignment') {
                 AssignmentSubmission::updateOrCreate(
-                    [
-                        'assignment_id' => $assignment->id,
-                        'student_id' => $studentId,
-                    ],
-                    [
-                        'score' => $score,
-                        // 'feedback' => null // Optional: clear or keep feedback
-                    ]
+                    ['assignment_id' => $itemId, 'student_id' => $studentId],
+                    ['score' => $score]
+                );
+            } 
+            elseif ($type === 'exam') {
+                ExamMark::updateOrCreate(
+                    ['exam_subject_id' => $itemId, 'student_id' => $studentId],
+                    ['marks_obtained' => $score, 'teacher_id' => $teacherId]
                 );
             }
+            // We ignore 'attendance' edits because attendance is driven by daily logs, not the gradebook
         }
 
         return redirect()->back()->with('success', 'Grades updated successfully.');

@@ -4,6 +4,7 @@
 use App\Http\Controllers\AiLessonPlanController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\BehaviorLogController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExaminationController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FeeController;
 use App\Http\Controllers\GradebookController;
 use App\Http\Controllers\GradingScaleController;
+use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\LessonPlanController;
 use App\Http\Controllers\NavigationController;
 use App\Http\Controllers\PaymentController;
@@ -161,13 +163,16 @@ Route::middleware(['auth'])->group(function () {
         });
         Route::resource('assignments', AssignmentController::class);
         Route::get('/assignments/{assignment}/grade', [AssignmentController::class, 'grade'])->name('assignments.grade');
-Route::post('/assignments/{assignment}/grade', [AssignmentController::class, 'storeGrade'])->name('assignments.grade.store');
+                                                                                                    Route::post('/assignments/{assignment}/grade', [AssignmentController::class, 'storeGrade'])->name('assignments.grade.store');
 
         Route::resource('lesson-plans', LessonPlanController::class);
         Route::post('/lesson-plans/ai-generate', [AiLessonPlanController::class, 'generate'])->name('lesson-plans.ai-generate');
 
         Route::get("/timetable", [TeachersController::class, 'timetable'])->name("timetable");
         Route::resource("grades", GradebookController::class)->names("grade-books");
+        Route::resource("behavior-logs", BehaviorLogController::class);
+        Route::resource("leave-requests", LeaveRequestController::class);
+
 
     });
 });

@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Classroom;
 use App\Models\Examination;
 use App\Models\FeeType;
+use App\Models\LeaveRequest;
 use App\Models\SchoolEvent;
 use App\Models\Timetable;
 use App\Models\User;
@@ -13,6 +14,7 @@ use App\Policies\AttendancePolicy;
 use App\Policies\ClassroomPolicy;
 use App\Policies\ExaminationPolicy;
 use App\Policies\FeePolicy;
+use App\Policies\LeaveRequestPolicy;
 use App\Policies\SchoolEventPolicy;
 use App\Policies\TimetablePolicy;
 use App\Policies\UserPolicy;
@@ -33,6 +35,7 @@ class AuthServiceProvider extends ServiceProvider
         SchoolEvent::class => SchoolEventPolicy::class,
         User::class => UserPolicy::class,
         FeeType::class => FeePolicy::class,
+        LeaveRequest::class => LeaveRequestPolicy::class,
     ];
 
     /**

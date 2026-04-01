@@ -13,28 +13,21 @@ export function FlashNotifications() {
     const { flash } = usePage().props as any;
 
     useEffect(() => {
-        if (flash?.success) {
+        if (!flash) return;
+
+        if (flash.success) {
             toast.success(flash.success);
         }
-    }, [flash?.success]);
-
-    useEffect(() => {
-        if (flash?.error) {
+        if (flash.error) {
             toast.error(flash.error);
         }
-    }, [flash?.error]);
-
-    useEffect(() => {
-        if (flash?.warning) {
+        if (flash.warning) {
             toast.warning(flash.warning);
         }
-    }, [flash?.warning]);
-
-    useEffect(() => {
-        if (flash?.info) {
+        if (flash.info) {
             toast.info(flash.info);
         }
-    }, [flash?.info]);
+    }, [flash]);
 
     return null;
 }
